@@ -6,6 +6,7 @@ from helpers import range2d, show_svg, svg_context
 PI = math.pi
 PI2 = math.pi / 2
 
+
 class CarlsonTile:
     """https://christophercarlson.com/portfolio/multi-scale-truchet-patterns/"""
 
@@ -32,6 +33,7 @@ class CarlsonTile:
     def draw(self, ctx, wh: int):
         ...
 
+
 class CarlsonSlash(CarlsonTile):
     def draw(self, ctx, wh: int):
         wh1 = wh / 3
@@ -50,6 +52,7 @@ class CarlsonSlash(CarlsonTile):
         ctx.arc_negative(0, wh, wh1, 0, -PI2)
         ctx.fill()
 
+
 class CarlsonMinus(CarlsonTile):
     def draw(self, ctx, wh: int):
         wh1 = wh / 3
@@ -66,6 +69,7 @@ class CarlsonMinus(CarlsonTile):
         ctx.arc(wh2, wh, wh6, 0, 2 * PI)
         ctx.fill()
 
+
 class CarlsonFour(CarlsonTile):
     def draw(self, ctx, wh: int):
         wh2 = wh / 2
@@ -74,6 +78,7 @@ class CarlsonFour(CarlsonTile):
         for x, y in [(wh2, 0), (wh, wh2), (wh2, wh), (0, wh2)]:
             ctx.arc(x, y, wh6, 0, 2 * PI)
             ctx.fill()
+
 
 class CarlsonX(CarlsonTile):
     def draw(self, ctx, wh: int):
@@ -91,6 +96,7 @@ class CarlsonX(CarlsonTile):
         ctx.arc_negative(0, 0, wh1, PI2, 0)
         ctx.fill()
 
+
 class CarlsonPlus(CarlsonTile):
     def draw(self, ctx, wh: int):
         wh2 = wh / 2
@@ -104,6 +110,7 @@ class CarlsonPlus(CarlsonTile):
         ctx.arc(wh2, wh, wh6, 0, PI)
         ctx.close_path()
         ctx.fill()
+
 
 class CarlsonFrown(CarlsonTile):
     def draw(self, ctx, wh: int):
@@ -122,6 +129,7 @@ class CarlsonFrown(CarlsonTile):
         ctx.arc(0, wh2, wh6, 0, 2 * PI)
         ctx.fill()
 
+
 class CarlsonT(CarlsonTile):
     def draw(self, ctx, wh: int):
         wh1 = wh / 3
@@ -137,6 +145,7 @@ class CarlsonT(CarlsonTile):
         ctx.arc(wh2, wh, wh6, 0, 2 * PI)
         ctx.fill()
 
+
 def demo(tiles):
     W = 100
     wh = 50
@@ -146,14 +155,14 @@ def demo(tiles):
         for tile in tiles:
             ctx.save()
             ctx.rectangle(0, 0, W, W)
-            ctx.set_source_rgb(.85, .85, .85)
+            ctx.set_source_rgb(0.85, 0.85, 0.85)
             ctx.fill()
 
             ctx.translate((W - wh) / 2, (W - wh) / 2)
             tile.draw(ctx, wh)
 
             ctx.rectangle(0, 0, wh, wh)
-            ctx.set_source_rgba(.5, .5, .5, .75)
+            ctx.set_source_rgba(0.5, 0.5, 0.5, 0.75)
             ctx.set_line_width(1)
             ctx.set_dash([5, 5], 7.5)
             ctx.stroke()
@@ -163,15 +172,29 @@ def demo(tiles):
 
     return show_svg(ctx)
 
+
 carlson_classes = [
-    (CarlsonSlash, 0), (CarlsonSlash, 1), (CarlsonMinus, 0), (CarlsonMinus, 1), (CarlsonFour, 0),
-    (CarlsonX, 0), (CarlsonPlus, 0), (CarlsonFrown, 0), (CarlsonFrown, 2), (CarlsonFrown, 3),
-    (CarlsonFrown, 1), (CarlsonT, 0), (CarlsonT, 2), (CarlsonT, 1), (CarlsonT, 3),
+    (CarlsonSlash, 0),
+    (CarlsonSlash, 1),
+    (CarlsonMinus, 0),
+    (CarlsonMinus, 1),
+    (CarlsonFour, 0),
+    (CarlsonX, 0),
+    (CarlsonPlus, 0),
+    (CarlsonFrown, 0),
+    (CarlsonFrown, 2),
+    (CarlsonFrown, 3),
+    (CarlsonFrown, 1),
+    (CarlsonT, 0),
+    (CarlsonT, 2),
+    (CarlsonT, 1),
+    (CarlsonT, 3),
 ]
 
 carlson_tiles = [[cls(rot, bw=bw) for cls, rot in carlson_classes] for bw in [1, 0]]
 
-def carlson(width=400, height=200, tilew=40, nlayers=2, chance=.5):
+
+def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5):
     with svg_context(width, height) as ctx:
         boxes = set()
         size = tilew
