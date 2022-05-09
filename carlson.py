@@ -10,12 +10,12 @@ PI2 = math.pi / 2
 class CarlsonTile:
     """https://christophercarlson.com/portfolio/multi-scale-truchet-patterns/"""
 
-    def __init__(self, rot, bw=1):
-        self.bg = [bw] * 3
-        self.fg = [1 - bw] * 3
+    def __init__(self, rot=0):
         self.rot = rot
 
-    def init_tile(self, ctx, wh):
+    def init_tile(self, ctx, wh, bgfg=None):
+        if bgfg is None:
+            bgfg = [[1, 1, 1, 1], [0, 0, 0, 1]]
         wh1 = wh / 3
         wh2 = wh / 2
         ctx.arc(0, 0, wh1, PI2, 0)
@@ -23,9 +23,9 @@ class CarlsonTile:
         ctx.arc(wh, wh, wh1, -PI2, PI)
         ctx.arc(0, wh, wh1, 0, -PI2)
         ctx.close_path()
-        ctx.set_source_rgb(*self.bg)
+        ctx.set_source_rgba(*bgfg[0])
         ctx.fill()
-        ctx.set_source_rgb(*self.fg)
+        ctx.set_source_rgba(*bgfg[1])
         ctx.translate(wh2, wh2)
         ctx.rotate(PI2 * self.rot)
         ctx.translate(-wh2, -wh2)
@@ -35,12 +35,12 @@ class CarlsonTile:
 
 
 class CarlsonSlash(CarlsonTile):
-    def draw(self, ctx, wh: int):
+    def draw(self, ctx, wh, bgfg=None):
         wh1 = wh / 3
         wh2 = wh / 2
         wh3 = wh - wh1
         wh6 = wh / 6
-        self.init_tile(ctx, wh)
+        self.init_tile(ctx, wh, bgfg)
         ctx.arc(wh2, 0, wh6, PI, 0)
         ctx.arc_negative(wh, 0, wh1, PI, PI2)
         ctx.arc(wh, wh2, wh6, -PI2, PI2)
@@ -54,12 +54,12 @@ class CarlsonSlash(CarlsonTile):
 
 
 class CarlsonMinus(CarlsonTile):
-    def draw(self, ctx, wh: int):
+    def draw(self, ctx, wh, bgfg=None):
         wh1 = wh / 3
         wh2 = wh / 2
         wh3 = wh - wh1
         wh6 = wh / 6
-        self.init_tile(ctx, wh)
+        self.init_tile(ctx, wh, bgfg)
         ctx.arc(wh2, 0, wh6, 0, 2 * PI)
         ctx.fill()
         ctx.arc(wh, wh2, wh6, -PI2, PI2)
@@ -71,21 +71,21 @@ class CarlsonMinus(CarlsonTile):
 
 
 class CarlsonFour(CarlsonTile):
-    def draw(self, ctx, wh: int):
+    def draw(self, ctx, wh, bgfg=None):
         wh2 = wh / 2
         wh6 = wh / 6
-        self.init_tile(ctx, wh)
+        self.init_tile(ctx, wh, bgfg)
         for x, y in [(wh2, 0), (wh, wh2), (wh2, wh), (0, wh2)]:
             ctx.arc(x, y, wh6, 0, 2 * PI)
             ctx.fill()
 
 
 class CarlsonX(CarlsonTile):
-    def draw(self, ctx, wh: int):
+    def draw(self, ctx, wh, bgfg=None):
         wh1 = wh / 3
         wh2 = wh / 2
         wh6 = wh / 6
-        self.init_tile(ctx, wh)
+        self.init_tile(ctx, wh, bgfg)
         ctx.arc(wh2, 0, wh6, PI, 0)
         ctx.arc_negative(wh, 0, wh1, PI, PI2)
         ctx.arc(wh, wh2, wh6, -PI2, PI2)
@@ -98,10 +98,10 @@ class CarlsonX(CarlsonTile):
 
 
 class CarlsonPlus(CarlsonTile):
-    def draw(self, ctx, wh: int):
+    def draw(self, ctx, wh, bgfg=None):
         wh2 = wh / 2
         wh6 = wh / 6
-        self.init_tile(ctx, wh)
+        self.init_tile(ctx, wh, bgfg)
         ctx.arc(wh, wh2, wh6, -PI2, PI2)
         ctx.arc(0, wh2, wh6, PI2, -PI2)
         ctx.close_path()
@@ -113,12 +113,12 @@ class CarlsonPlus(CarlsonTile):
 
 
 class CarlsonFrown(CarlsonTile):
-    def draw(self, ctx, wh: int):
+    def draw(self, ctx, wh, bgfg=None):
         wh1 = wh / 3
         wh2 = wh / 2
         wh3 = wh - wh1
         wh6 = wh / 6
-        self.init_tile(ctx, wh)
+        self.init_tile(ctx, wh, bgfg)
         ctx.arc(wh2, 0, wh6, PI, 0)
         ctx.arc_negative(wh, 0, wh1, PI, PI2)
         ctx.arc(wh, wh2, wh6, -PI2, PI2)
@@ -131,11 +131,11 @@ class CarlsonFrown(CarlsonTile):
 
 
 class CarlsonT(CarlsonTile):
-    def draw(self, ctx, wh: int):
+    def draw(self, ctx, wh, bgfg=None):
         wh1 = wh / 3
         wh2 = wh / 2
         wh6 = wh / 6
-        self.init_tile(ctx, wh)
+        self.init_tile(ctx, wh, bgfg)
         ctx.arc(wh2, 0, wh6, PI, 0)
         ctx.arc_negative(wh, 0, wh1, PI, PI2)
         ctx.arc(wh, wh2, wh6, -PI2, PI2)
@@ -177,40 +177,40 @@ def show_tiles(tiles, per_row=5):
     return show_svg(ctx)
 
 
-carlson_classes = [
-    (CarlsonSlash, 0),
-    (CarlsonSlash, 1),
-    (CarlsonMinus, 0),
-    (CarlsonMinus, 1),
-    (CarlsonFour, 0),
-    (CarlsonX, 0),
-    (CarlsonPlus, 0),
-    (CarlsonFrown, 0),
-    (CarlsonFrown, 2),
-    (CarlsonFrown, 3),
-    (CarlsonFrown, 1),
-    (CarlsonT, 0),
-    (CarlsonT, 2),
-    (CarlsonT, 1),
-    (CarlsonT, 3),
+carlson_tiles = [
+    CarlsonSlash(0),
+    CarlsonSlash(1),
+    CarlsonMinus(0),
+    CarlsonMinus(1),
+    CarlsonFour(),
+    CarlsonX(),
+    CarlsonPlus(),
+    CarlsonFrown(0),
+    CarlsonFrown(2),
+    CarlsonFrown(3),
+    CarlsonFrown(1),
+    CarlsonT(0),
+    CarlsonT(2),
+    CarlsonT(1),
+    CarlsonT(3),
 ]
 
-carlson_tiles = [[cls(rot, bw=bw) for cls, rot in carlson_classes] for bw in [1, 0]]
 
-
-def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5):
+def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0):
     with svg_context(width, height) as ctx:
         boxes = set()
         size = tilew
+        bgfg = [[bg, bg, bg, 1], [fg, fg, fg, 1]]
         for ox, oy in range2d(int(width / size), int(height / size)):
             ctx.save()
             ctx.translate(ox * size, oy * size)
-            random.choice(carlson_tiles[0]).draw(ctx, size)
+            random.choice(carlson_tiles).draw(ctx, size, bgfg)
             ctx.restore()
             boxes.add((ox * size, oy * size, size))
 
         for ilayer in range(nlayers - 1):
             last_boxes = boxes
+            bgfg = bgfg[::-1]
             boxes = set()
             for bx, by, bsize in last_boxes:
                 if random.random() <= chance:
@@ -219,7 +219,7 @@ def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5):
                         nbx, nby = bx + dx * nbsize, by + dy * nbsize
                         ctx.save()
                         ctx.translate(nbx, nby)
-                        random.choice(carlson_tiles[(ilayer + 1) % 2]).draw(ctx, nbsize)
+                        random.choice(carlson_tiles).draw(ctx, nbsize, bgfg)
                         ctx.restore()
                         boxes.add((nbx, nby, nbsize))
     return show_svg(ctx)
