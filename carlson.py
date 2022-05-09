@@ -146,14 +146,19 @@ class CarlsonT(CarlsonTile):
         ctx.fill()
 
 
-def demo(tiles):
+def show_tiles(tiles, per_row=5):
     W = 100
     wh = 50
     gap = 10
-    totalW = (W + gap) * len(tiles) + gap
-    with svg_context(totalW, W) as ctx:
-        for tile in tiles:
+    nrows = len(tiles) // per_row + (1 if len(tiles) % per_row else 0)
+    ncols = per_row if nrows > 1 else len(tiles)
+    totalW = (W + gap) * ncols - gap
+    totalH = (W + gap) * nrows - gap
+    with svg_context(totalW, totalH) as ctx:
+        for i, tile in enumerate(tiles):
+            r, c = divmod(i, per_row)
             ctx.save()
+            ctx.translate((W + gap) * c, (W + gap) * r)
             ctx.rectangle(0, 0, W, W)
             ctx.set_source_rgb(0.85, 0.85, 0.85)
             ctx.fill()
@@ -168,7 +173,6 @@ def demo(tiles):
             ctx.stroke()
 
             ctx.restore()
-            ctx.translate(W + gap, 0)
 
     return show_svg(ctx)
 
