@@ -188,7 +188,8 @@ carlson_tiles = [
 ]
 
 
-def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0):
+def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0, seed=None):
+    rand = random.Random(seed)
     with svg_context(width, height) as ctx:
         boxes = set()
         size = tilew
@@ -196,7 +197,7 @@ def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0):
         for ox, oy in range2d(int(width / size), int(height / size)):
             ctx.save()
             ctx.translate(ox * size, oy * size)
-            random.choice(carlson_tiles).draw(ctx, size, bgfg)
+            rand.choice(carlson_tiles).draw(ctx, size, bgfg)
             ctx.restore()
             boxes.add((ox * size, oy * size, size))
 
@@ -205,13 +206,13 @@ def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0):
             bgfg = bgfg[::-1]
             boxes = set()
             for bx, by, bsize in last_boxes:
-                if random.random() <= chance:
+                if rand.random() <= chance:
                     for dx, dy in range2d(2, 2):
                         nbsize = bsize / 2
                         nbx, nby = bx + dx * nbsize, by + dy * nbsize
                         ctx.save()
                         ctx.translate(nbx, nby)
-                        random.choice(carlson_tiles).draw(ctx, nbsize, bgfg)
+                        rand.choice(carlson_tiles).draw(ctx, nbsize, bgfg)
                         ctx.restore()
                         boxes.add((nbx, nby, nbsize))
     return show_svg(ctx)
