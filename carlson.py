@@ -178,21 +178,13 @@ def show_tiles(tiles, per_row=5):
 
 
 carlson_tiles = [
-    CarlsonSlash(0),
-    CarlsonSlash(1),
-    CarlsonMinus(0),
-    CarlsonMinus(1),
+    *map(CarlsonSlash, range(2)),
+    *map(CarlsonMinus, range(2)),
     CarlsonFour(),
     CarlsonX(),
     CarlsonPlus(),
-    CarlsonFrown(0),
-    CarlsonFrown(2),
-    CarlsonFrown(3),
-    CarlsonFrown(1),
-    CarlsonT(0),
-    CarlsonT(2),
-    CarlsonT(1),
-    CarlsonT(3),
+    *map(CarlsonFrown, range(4)),
+    *map(CarlsonT, range(4)),
 ]
 
 
