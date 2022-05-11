@@ -1,7 +1,7 @@
 import math
 import random
 
-from helpers import range2d, show_svg, svg_context
+from helpers import range2d, CairoSvg
 
 PI = math.pi
 PI2 = math.pi / 2
@@ -52,7 +52,7 @@ class SmithRightTile(SmithLeftTile):
 
 
 def smith(width=400, height=200, tilew=40, grid=False, gap=0):
-    with svg_context(width, height) as ctx:
+    with CairoSvg(width, height) as ctx:
         tiles = [SmithLeftTile(), SmithRightTile()]
         bgfgs = [
             [[1, 1, 1, 1], [0, 0, 0, 1]],
@@ -69,4 +69,4 @@ def smith(width=400, height=200, tilew=40, grid=False, gap=0):
                 ctx.set_source_rgb(0, 0, 0)
                 ctx.stroke()
             ctx.restore()
-    return show_svg(ctx)
+    return ctx

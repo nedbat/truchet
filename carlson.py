@@ -1,7 +1,8 @@
 import math
 import random
 
-from helpers import range2d, show_svg, svg_context
+from helpers import range2d, CairoSvg
+
 
 PI = math.pi
 PI2 = math.pi / 2
@@ -154,7 +155,7 @@ def show_tiles(tiles, per_row=5):
     ncols = per_row if nrows > 1 else len(tiles)
     totalW = (W + gap) * ncols - gap
     totalH = (W + gap) * nrows - gap
-    with svg_context(totalW, totalH) as ctx:
+    with CairoSvg(totalW, totalH) as ctx:
         for i, tile in enumerate(tiles):
             r, c = divmod(i, per_row)
             ctx.save()
@@ -174,7 +175,7 @@ def show_tiles(tiles, per_row=5):
 
             ctx.restore()
 
-    return show_svg(ctx)
+    return ctx
 
 
 carlson_tiles = [
@@ -190,7 +191,7 @@ carlson_tiles = [
 
 def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0, seed=None):
     rand = random.Random(seed)
-    with svg_context(width, height) as ctx:
+    with CairoSvg(width, height) as ctx:
         boxes = set()
         size = tilew
         bgfg = [[bg, bg, bg, 1], [fg, fg, fg, 1]]
@@ -215,4 +216,5 @@ def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0, 
                         rand.choice(carlson_tiles).draw(ctx, nbsize, bgfg)
                         ctx.restore()
                         boxes.add((nbx, nby, nbsize))
-    return show_svg(ctx)
+
+    return ctx
