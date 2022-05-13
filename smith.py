@@ -51,7 +51,8 @@ class SmithRightTile(SmithLeftTile):
         ctx.restore()
 
 
-def smith(width=400, height=200, tilew=40, grid=False, gap=0):
+def smith(width=400, height=200, tilew=40, grid=False, gap=0, seed=None):
+    rand = random.Random(seed)
     with CairoSvg(width, height) as ctx:
         tiles = [SmithLeftTile(), SmithRightTile()]
         bgfgs = [
@@ -61,7 +62,7 @@ def smith(width=400, height=200, tilew=40, grid=False, gap=0):
         for ox, oy in range2d(width // tilew, height // tilew):
             ctx.save()
             ctx.translate(ox * (tilew + gap), oy * (tilew + gap))
-            coin = random.choice([0, 1])
+            coin = rand.choice([0, 1])
             tiles[coin].draw(ctx, tilew, bgfgs[(ox + oy + coin) % 2])
             if grid:
                 ctx.set_line_width(0.1)
