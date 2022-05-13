@@ -2,12 +2,19 @@
 
 import io
 import itertools
+import os.path
 
 import cairo
 
 
 class CairoContext:
-    def __init__(self):
+    def __init__(self, width, height, output=None):
+        self.width = width
+        self.height = height
+        if isinstance(output, str):
+            self.output = os.path.expandvars(os.path.expanduser(output))
+        else:
+            self.output = output
         self.surface = None
         self.ctx = None
 
@@ -26,9 +33,9 @@ class CairoContext:
 
 class CairoSvg(CairoContext):
     def __init__(self, width, height):
-        super().__init__()
+        super().__init__(width, height)
         self.svgio = io.BytesIO()
-        self.surface = cairo.SVGSurface(self.svgio, width, height)
+        self.surface = cairo.SVGSurface(self.svgio, self.width, self.height)
         self.ctx = cairo.Context(self.surface)
 
     def svg(self):
@@ -39,10 +46,10 @@ class CairoSvg(CairoContext):
 
 
 class CairoPng(CairoContext):
-    def __init__(self, width, height, output):
-        self.output = output
+    def __init__(self, width, height, output=None):
+        super().__init__(width, height, output)
         self.pngio = None
-        self.surface = cairo.ImageSurface(cairo.Format.RGB24, width, height)
+        self.surface = cairo.ImageSurface(cairo.Format.RGB24, self.width, self.height)
         self.ctx = cairo.Context(self.surface)
 
     def _repr_html_(self):
