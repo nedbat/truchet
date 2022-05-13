@@ -11,6 +11,9 @@ class CairoContext:
         self.surface = None
         self.ctx = None
 
+    def _repr_pretty_(self, p, cycle):
+        p.text(f"<{self.__class__.__module__}.{self.__class__.__name__}>")
+
     def __enter__(self):
         return self
 
