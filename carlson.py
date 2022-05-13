@@ -1,7 +1,7 @@
 import math
 import random
 
-from helpers import color, range2d, CairoSvg
+from helpers import CairoSvg, cairo_context, color, range2d
 
 
 PI = math.pi
@@ -189,9 +189,20 @@ carlson_tiles = [
 ]
 
 
-def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0, seed=None):
+def carlson(
+    width=400,
+    height=200,
+    tilew=40,
+    nlayers=2,
+    chance=0.5,
+    bg=1,
+    fg=0,
+    seed=None,
+    format="svg",
+    output=None,
+):
     rand = random.Random(seed)
-    with CairoSvg(width, height) as ctx:
+    with cairo_context(width, height, format=format, output=output) as ctx:
         boxes = set()
         size = tilew
         bgfg = [color(bg), color(fg)]

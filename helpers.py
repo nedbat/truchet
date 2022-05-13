@@ -35,6 +35,38 @@ class CairoSvg(CairoContext):
         return self.svg().decode()
 
 
+class CairoPng(CairoContext):
+    def __init__(self, width, height, output):
+        self.output = output
+        self.pngio = None
+        self.surface = cairo.ImageSurface(cairo.Format.RGB24, width, height)
+        self.ctx = cairo.Context(self.surface)
+
+    def _repr_html_(self):
+        if self.output is not None:
+            return f"<b><i>Wrote to {self.output}</i></b>"
+
+    def _repr_png_(self):
+        if self.output is None:
+            return self.pngio.getvalue()
+
+    def __exit__(self, typ, val, tb):
+        if self.output is not None:
+            self.surface.write_to_png(self.output)
+        else:
+            self.pngio = io.BytesIO()
+            self.surface.write_to_png(self.pngio)
+        super().__exit__(typ, val, tb)
+
+
+def cairo_context(width, height, format="svg", output=None):
+    if format == "svg":
+        assert output is None, "No output name allowed for svg"
+        return CairoSvg(width, height)
+    elif format == "png":
+        return CairoPng(width, height, output)
+
+
 def range2d(nx, ny):
     return itertools.product(range(nx), range(ny))
 
