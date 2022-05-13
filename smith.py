@@ -1,7 +1,7 @@
 import math
 import random
 
-from helpers import range2d, CairoSvg
+from helpers import color, range2d, CairoSvg
 
 PI = math.pi
 PI2 = math.pi / 2
@@ -12,7 +12,7 @@ eps = 0.5
 class SmithTile:
     def init_tile(self, ctx, wh, bgfg=None):
         if bgfg is None:
-            bgfg = [[1, 1, 1, 1], [0, 0, 0, 1]]
+            bgfg = [color(1), color(0)]
         eps = 0
         ctx.rectangle(0 - eps, 0 - eps, wh + eps, wh + eps)
         ctx.set_source_rgba(*bgfg[0])
@@ -55,8 +55,8 @@ def smith(width=400, height=200, tilew=40, grid=False, gap=0):
     with CairoSvg(width, height) as ctx:
         tiles = [SmithLeftTile(), SmithRightTile()]
         bgfgs = [
-            [[1, 1, 1, 1], [0, 0, 0, 1]],
-            [[0, 0, 0, 1], [1, 1, 1, 1]],
+            [color(1), color(0)],
+            [color(0), color(1)],
         ]
         for ox, oy in range2d(width // tilew, height // tilew):
             ctx.save()

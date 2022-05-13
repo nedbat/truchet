@@ -1,7 +1,7 @@
 import math
 import random
 
-from helpers import range2d, CairoSvg
+from helpers import color, range2d, CairoSvg
 
 
 PI = math.pi
@@ -16,7 +16,7 @@ class CarlsonTile:
 
     def init_tile(self, ctx, wh, bgfg=None):
         if bgfg is None:
-            bgfg = [[1, 1, 1, 1], [0, 0, 0, 1]]
+            bgfg = [color(1), color(0)]
         wh1 = wh / 3
         wh2 = wh / 2
         ctx.arc(0, 0, wh1, PI2, 0)
@@ -194,7 +194,7 @@ def carlson(width=400, height=200, tilew=40, nlayers=2, chance=0.5, bg=1, fg=0, 
     with CairoSvg(width, height) as ctx:
         boxes = set()
         size = tilew
-        bgfg = [[bg, bg, bg, 1], [fg, fg, fg, 1]]
+        bgfg = [color(bg), color(fg)]
         for ox, oy in range2d(int(width / size), int(height / size)):
             ctx.save()
             ctx.translate(ox * size, oy * size)
