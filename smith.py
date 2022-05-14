@@ -1,7 +1,7 @@
 import math
 import random
 
-from helpers import color, range2d, CairoSvg
+from helpers import color, range2d, cairo_context
 
 PI = math.pi
 PI2 = math.pi / 2
@@ -53,7 +53,7 @@ class SmithRightTile(SmithLeftTile):
 
 def smith(width=400, height=200, tilew=40, grid=False, gap=0, seed=None):
     rand = random.Random(seed)
-    with CairoSvg(width, height) as ctx:
+    with cairo_context(width, height) as ctx:
         tiles = [SmithLeftTile(), SmithRightTile()]
         bgfgs = [
             [color(1), color(0)],

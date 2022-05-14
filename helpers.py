@@ -1,4 +1,4 @@
-"""Helpers for drawing in Jupyter notebooks."""
+"""Helpers for drawing in Jupyter notebooks with PyCairo."""
 
 import io
 import itertools
@@ -21,28 +21,33 @@ class CairoContext:
     def _repr_pretty_(self, p, cycle):
         p.text(f"<{self.__class__.__module__}.{self.__class__.__name__}>")
 
+    def _repr_html_(self):
+        if self.output is not None:
+            return f"<b><i>Wrote to {self.output}</i></b>"
+
     def __enter__(self):
         return self
-
-    def __exit__(self, typ, val, tb):
-        self.surface.finish()
 
     def __getattr__(self, name):
         return getattr(self.ctx, name)
 
 
 class CairoSvg(CairoContext):
-    def __init__(self, width, height):
-        super().__init__(width, height)
+    def __init__(self, width, height, output=None):
+        super().__init__(width, height, output)
         self.svgio = io.BytesIO()
         self.surface = cairo.SVGSurface(self.svgio, self.width, self.height)
         self.ctx = cairo.Context(self.surface)
 
-    def svg(self):
-        return self.svgio.getvalue()
-
     def _repr_svg_(self):
-        return self.svg().decode()
+        if self.output is None:
+            return self.svgio.getvalue().decode()
+
+    def __exit__(self, typ, val, tb):
+        self.surface.finish()
+        if self.output is not None:
+            with open(self.output, "wb") as svgout:
+                svgout.write(self.svgio.getvalue())
 
 
 class CairoPng(CairoContext):
@@ -51,10 +56,6 @@ class CairoPng(CairoContext):
         self.pngio = None
         self.surface = cairo.ImageSurface(cairo.Format.RGB24, self.width, self.height)
         self.ctx = cairo.Context(self.surface)
-
-    def _repr_html_(self):
-        if self.output is not None:
-            return f"<b><i>Wrote to {self.output}</i></b>"
 
     def _repr_png_(self):
         if self.output is None:
@@ -66,15 +67,17 @@ class CairoPng(CairoContext):
         else:
             self.pngio = io.BytesIO()
             self.surface.write_to_png(self.pngio)
-        super().__exit__(typ, val, tb)
+        self.surface.finish()
 
 
 def cairo_context(width, height, format="svg", output=None):
     if format == "svg":
-        assert output is None, "No output name allowed for svg"
-        return CairoSvg(width, height)
+        cls = CairoSvg
     elif format == "png":
-        return CairoPng(width, height, output)
+        cls = CairoPng
+    else:
+        raise ValueError(f"Unknown format: {format!r}")
+    return cls(width, height, output)
 
 
 def range2d(nx, ny):

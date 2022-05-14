@@ -1,7 +1,7 @@
 import math
 import random
 
-from helpers import CairoSvg, cairo_context, color, range2d
+from helpers import cairo_context, color, range2d
 
 
 PI = math.pi
@@ -155,7 +155,7 @@ def show_tiles(tiles, per_row=5):
     ncols = per_row if nrows > 1 else len(tiles)
     totalW = (W + gap) * ncols - gap
     totalH = (W + gap) * nrows - gap
-    with CairoSvg(totalW, totalH) as ctx:
+    with cairo_context(totalW, totalH) as ctx:
         for i, tile in enumerate(tiles):
             r, c = divmod(i, per_row)
             ctx.save()
