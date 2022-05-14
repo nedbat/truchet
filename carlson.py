@@ -4,8 +4,12 @@ import random
 from helpers import cairo_context, color, range2d
 
 
-PI = math.pi
-PI2 = math.pi / 2
+# Compass points for making circle arcs
+CE = 0
+CS = math.pi / 2
+CW = math.pi
+CN = -math.pi / 2
+FULL_CIRCLE = (0, 2 * math.pi)
 
 
 class CarlsonTile:
@@ -19,16 +23,16 @@ class CarlsonTile:
             bgfg = [color(1), color(0)]
         wh1 = wh / 3
         wh2 = wh / 2
-        ctx.arc(0, 0, wh1, PI2, 0)
-        ctx.arc(wh, 0, wh1, PI, PI2)
-        ctx.arc(wh, wh, wh1, -PI2, PI)
-        ctx.arc(0, wh, wh1, 0, -PI2)
+        ctx.arc(0, 0, wh1, CS, CE)
+        ctx.arc(wh, 0, wh1, CW, CS)
+        ctx.arc(wh, wh, wh1, CN, CW)
+        ctx.arc(0, wh, wh1, CE, CN)
         ctx.close_path()
         ctx.set_source_rgba(*bgfg[0])
         ctx.fill()
         ctx.set_source_rgba(*bgfg[1])
         ctx.translate(wh2, wh2)
-        ctx.rotate(PI2 * self.rot)
+        ctx.rotate(math.pi / 2 * self.rot)
         ctx.translate(-wh2, -wh2)
 
     def draw(self, ctx, wh: int):
@@ -42,15 +46,15 @@ class CarlsonSlash(CarlsonTile):
         wh3 = wh - wh1
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
-        ctx.arc(wh2, 0, wh6, PI, 0)
-        ctx.arc_negative(wh, 0, wh1, PI, PI2)
-        ctx.arc(wh, wh2, wh6, -PI2, PI2)
-        ctx.arc(wh, 0, wh3, PI2, PI)
+        ctx.arc(wh2, 0, wh6, CW, CE)
+        ctx.arc_negative(wh, 0, wh1, CW, CS)
+        ctx.arc(wh, wh2, wh6, CN, CS)
+        ctx.arc(wh, 0, wh3, CS, CW)
         ctx.fill()
-        ctx.arc(0, wh2, wh6, PI2, -PI2)
-        ctx.arc(0, wh, wh3, -PI2, 0)
-        ctx.arc(wh2, wh, wh6, 0, PI)
-        ctx.arc_negative(0, wh, wh1, 0, -PI2)
+        ctx.arc(0, wh2, wh6, CS, CN)
+        ctx.arc(0, wh, wh3, CN, CE)
+        ctx.arc(wh2, wh, wh6, CE, CW)
+        ctx.arc_negative(0, wh, wh1, CE, CN)
         ctx.fill()
 
 
@@ -61,13 +65,13 @@ class CarlsonMinus(CarlsonTile):
         wh3 = wh - wh1
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
-        ctx.arc(wh2, 0, wh6, 0, 2 * PI)
+        ctx.arc(wh2, 0, wh6, *FULL_CIRCLE)
         ctx.fill()
-        ctx.arc(wh, wh2, wh6, -PI2, PI2)
-        ctx.arc(0, wh2, wh6, PI2, -PI2)
+        ctx.arc(wh, wh2, wh6, CN, CS)
+        ctx.arc(0, wh2, wh6, CS, CN)
         ctx.close_path()
         ctx.fill()
-        ctx.arc(wh2, wh, wh6, 0, 2 * PI)
+        ctx.arc(wh2, wh, wh6, *FULL_CIRCLE)
         ctx.fill()
 
 
@@ -77,7 +81,7 @@ class CarlsonFour(CarlsonTile):
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
         for x, y in [(wh2, 0), (wh, wh2), (wh2, wh), (0, wh2)]:
-            ctx.arc(x, y, wh6, 0, 2 * PI)
+            ctx.arc(x, y, wh6, *FULL_CIRCLE)
             ctx.fill()
 
 
@@ -87,14 +91,14 @@ class CarlsonX(CarlsonTile):
         wh2 = wh / 2
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
-        ctx.arc(wh2, 0, wh6, PI, 0)
-        ctx.arc_negative(wh, 0, wh1, PI, PI2)
-        ctx.arc(wh, wh2, wh6, -PI2, PI2)
-        ctx.arc_negative(wh, wh, wh1, -PI2, PI)
-        ctx.arc(wh2, wh, wh6, 0, PI)
-        ctx.arc_negative(0, wh, wh1, 0, -PI2)
-        ctx.arc(0, wh2, wh6, PI2, -PI2)
-        ctx.arc_negative(0, 0, wh1, PI2, 0)
+        ctx.arc(wh2, 0, wh6, CW, CE)
+        ctx.arc_negative(wh, 0, wh1, CW, CS)
+        ctx.arc(wh, wh2, wh6, CN, CS)
+        ctx.arc_negative(wh, wh, wh1, CN, CW)
+        ctx.arc(wh2, wh, wh6, CE, CW)
+        ctx.arc_negative(0, wh, wh1, CE, CN)
+        ctx.arc(0, wh2, wh6, CS, CN)
+        ctx.arc_negative(0, 0, wh1, CS, CE)
         ctx.fill()
 
 
@@ -103,12 +107,12 @@ class CarlsonPlus(CarlsonTile):
         wh2 = wh / 2
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
-        ctx.arc(wh, wh2, wh6, -PI2, PI2)
-        ctx.arc(0, wh2, wh6, PI2, -PI2)
+        ctx.arc(wh, wh2, wh6, CN, CS)
+        ctx.arc(0, wh2, wh6, CS, CN)
         ctx.close_path()
         ctx.fill()
-        ctx.arc(wh2, 0, wh6, PI, 0)
-        ctx.arc(wh2, wh, wh6, 0, PI)
+        ctx.arc(wh2, 0, wh6, CW, CE)
+        ctx.arc(wh2, wh, wh6, CE, CW)
         ctx.close_path()
         ctx.fill()
 
@@ -120,14 +124,14 @@ class CarlsonFrown(CarlsonTile):
         wh3 = wh - wh1
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
-        ctx.arc(wh2, 0, wh6, PI, 0)
-        ctx.arc_negative(wh, 0, wh1, PI, PI2)
-        ctx.arc(wh, wh2, wh6, -PI2, PI2)
-        ctx.arc(wh, 0, wh3, PI2, PI)
+        ctx.arc(wh2, 0, wh6, CW, CE)
+        ctx.arc_negative(wh, 0, wh1, CW, CS)
+        ctx.arc(wh, wh2, wh6, CN, CS)
+        ctx.arc(wh, 0, wh3, CS, CW)
         ctx.fill()
-        ctx.arc(wh2, wh, wh6, 0, 2 * PI)
+        ctx.arc(wh2, wh, wh6, *FULL_CIRCLE)
         ctx.fill()
-        ctx.arc(0, wh2, wh6, 0, 2 * PI)
+        ctx.arc(0, wh2, wh6, *FULL_CIRCLE)
         ctx.fill()
 
 
@@ -137,13 +141,13 @@ class CarlsonT(CarlsonTile):
         wh2 = wh / 2
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
-        ctx.arc(wh2, 0, wh6, PI, 0)
-        ctx.arc_negative(wh, 0, wh1, PI, PI2)
-        ctx.arc(wh, wh2, wh6, -PI2, PI2)
-        ctx.arc(0, wh2, wh6, PI2, -PI2)
-        ctx.arc_negative(0, 0, wh1, PI2, 0)
+        ctx.arc(wh2, 0, wh6, CW, CE)
+        ctx.arc_negative(wh, 0, wh1, CW, CS)
+        ctx.arc(wh, wh2, wh6, CN, CS)
+        ctx.arc(0, wh2, wh6, CS, CN)
+        ctx.arc_negative(0, 0, wh1, CS, CE)
         ctx.fill()
-        ctx.arc(wh2, wh, wh6, 0, 2 * PI)
+        ctx.arc(wh2, wh, wh6, *FULL_CIRCLE)
         ctx.fill()
 
 
