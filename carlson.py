@@ -178,14 +178,18 @@ def show_tiles(tiles, per_row=5):
     return ctx
 
 
+def rotations(cls, num_rots):
+    return map(cls, range(num_rots))
+
+
 carlson_tiles = [
-    *map(CarlsonSlash, range(2)),
-    *map(CarlsonMinus, range(2)),
+    *rotations(CarlsonSlash, 2),
+    *rotations(CarlsonMinus, 2),
     CarlsonFour(),
     CarlsonX(),
     CarlsonPlus(),
-    *map(CarlsonFrown, range(4)),
-    *map(CarlsonT, range(4)),
+    *rotations(CarlsonFrown, 4),
+    *rotations(CarlsonT, 4),
 ]
 
 
