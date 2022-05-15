@@ -1,7 +1,8 @@
 import math
 import random
 
-from helpers import color, range2d, cairo_context
+from drawing import cairo_context
+from helpers import color, range2d
 
 PI = math.pi
 PI2 = math.pi / 2

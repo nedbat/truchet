@@ -1,7 +1,8 @@
 import math
 import random
 
-from helpers import cairo_context, color, range2d
+from drawing import cairo_context
+from helpers import color, range2d
 
 
 # Compass points for making circle arcs
@@ -186,7 +187,7 @@ def rotations(cls, num_rots):
     return map(cls, range(num_rots))
 
 
-carlson_tiles = [
+carlson_tiles = (
     *rotations(CarlsonSlash, 2),
     *rotations(CarlsonMinus, 2),
     CarlsonFour(),
@@ -194,13 +195,14 @@ carlson_tiles = [
     CarlsonPlus(),
     *rotations(CarlsonFrown, 4),
     *rotations(CarlsonT, 4),
-]
+)
 
 
 def carlson(
     width=400,
     height=200,
     tilew=40,
+    tiles=carlson_tiles,
     nlayers=2,
     chance=0.5,
     bg=1,
@@ -208,32 +210,42 @@ def carlson(
     seed=None,
     format="svg",
     output=None,
+    grid=False,
 ):
+    all_boxes = []
+    def one_tile(x, y, size):
+        ctx.save()
+        ctx.translate(x, y)
+        rand.choice(tiles).draw(ctx, size, bgfg)
+        ctx.restore()
+        boxes.append((x, y, size))
+        if grid:
+            all_boxes.append((x, y, size))
+
     rand = random.Random(seed)
     with cairo_context(width, height, format=format, output=output) as ctx:
-        boxes = set()
+        boxes = []
         size = tilew
         bgfg = [color(bg), color(fg)]
         for ox, oy in range2d(int(width / size), int(height / size)):
-            ctx.save()
-            ctx.translate(ox * size, oy * size)
-            rand.choice(carlson_tiles).draw(ctx, size, bgfg)
-            ctx.restore()
-            boxes.add((ox * size, oy * size, size))
+            one_tile(ox * size, oy * size, size)
 
         for ilayer in range(nlayers - 1):
             last_boxes = boxes
             bgfg = bgfg[::-1]
-            boxes = set()
+            boxes = []
             for bx, by, bsize in last_boxes:
                 if rand.random() <= chance:
                     for dx, dy in range2d(2, 2):
                         nbsize = bsize / 2
                         nbx, nby = bx + dx * nbsize, by + dy * nbsize
-                        ctx.save()
-                        ctx.translate(nbx, nby)
-                        rand.choice(carlson_tiles).draw(ctx, nbsize, bgfg)
-                        ctx.restore()
-                        boxes.add((nbx, nby, nbsize))
+                        one_tile(nbx, nby, nbsize)
+
+        if grid:
+            for x, y, size in all_boxes:
+                ctx.set_line_width(1)
+                ctx.rectangle(x, y, size, size)
+                ctx.set_source_rgb(1, 0, 0)
+                ctx.stroke()
 
     return ctx
