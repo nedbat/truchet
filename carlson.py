@@ -76,6 +76,25 @@ class CarlsonMinus(CarlsonTile):
         ctx.fill()
 
 
+class CarlsonHalfMinus(CarlsonTile):
+    def draw(self, ctx, wh, bgfg=None):
+        wh1 = wh / 3
+        wh2 = wh / 2
+        wh3 = wh - wh1
+        wh6 = wh / 6
+        self.init_tile(ctx, wh, bgfg)
+        ctx.arc(wh2, 0, wh6, *FULL_CIRCLE)
+        ctx.fill()
+        ctx.arc(wh, wh2, wh6, CN, CS)
+        ctx.arc(wh2, wh2, wh6, CS, CN)
+        ctx.close_path()
+        ctx.fill()
+        ctx.arc(wh2, wh, wh6, *FULL_CIRCLE)
+        ctx.fill()
+        ctx.arc(0, wh2, wh6, *FULL_CIRCLE)
+        ctx.fill()
+
+
 class CarlsonFour(CarlsonTile):
     def draw(self, ctx, wh, bgfg=None):
         wh2 = wh / 2
@@ -152,7 +171,45 @@ class CarlsonT(CarlsonTile):
         ctx.fill()
 
 
-def show_tiles(tiles, per_row=5):
+def tile_value(tile):
+    pic = carlson(width=10, height=10, tilew=10, tiles=[tile], nlayers=1, format="png")
+    import numpy as np
+    from PIL import Image
+
+    a = np.array(Image.open(pic.pngio).convert("L"))
+    value = np.sum(a) / a.size
+    return value / 255
+
+
+def value_chart(tiles, inverted=False):
+    marg = 50
+    width = 800
+    mid = 50
+
+    def tick(x, h):
+        v = (width - 2 * marg) * x + marg
+        ctx.move_to(v, mid - h / 2)
+        ctx.line_to(v, mid + h / 2)
+        ctx.stroke()
+
+    with cairo_context(width, mid * 2) as ctx:
+        ctx.set_line_width(0.5)
+        ctx.move_to(marg, mid)
+        ctx.line_to(width - marg, mid)
+        ctx.stroke()
+        tick(0, 20)
+        tick(1, 20)
+        for i in range(10):
+            tick(i / 10, 10)
+        for t in tiles:
+            value = tile_value(t)
+            tick(value, 50)
+            if inverted:
+                tick(1 - value, 50)
+    return ctx
+
+
+def show_tiles(tiles, per_row=5, with_value=False, with_name=False):
     W = 100
     wh = 50
     gap = 10
@@ -161,6 +218,8 @@ def show_tiles(tiles, per_row=5):
     totalW = (W + gap) * ncols - gap
     totalH = (W + gap) * nrows - gap
     with cairo_context(totalW, totalH) as ctx:
+        ctx.select_font_face("Sans")
+        ctx.set_font_size(10)
         for i, tile in enumerate(tiles):
             r, c = divmod(i, per_row)
             ctx.save()
@@ -169,6 +228,7 @@ def show_tiles(tiles, per_row=5):
             ctx.set_source_rgb(0.85, 0.85, 0.85)
             ctx.fill()
 
+            ctx.save()
             ctx.translate((W - wh) / 2, (W - wh) / 2)
             tile.draw(ctx, wh)
 
@@ -177,6 +237,17 @@ def show_tiles(tiles, per_row=5):
             ctx.set_line_width(1)
             ctx.set_dash([5, 5], 7.5)
             ctx.stroke()
+            ctx.restore()
+
+            if with_value:
+                ctx.move_to(2, 10)
+                ctx.set_source_rgba(0, 0, 0, 1)
+                ctx.show_text(f"{tile_value(tile):.2f}")
+
+            if with_name:
+                ctx.move_to(2, W - 2)
+                ctx.set_source_rgba(0, 0, 0, 1)
+                ctx.show_text(tile.__class__.__name__)
 
             ctx.restore()
 
@@ -187,7 +258,19 @@ def rotations(cls, num_rots):
     return map(cls, range(num_rots))
 
 
-carlson_tiles = (
+carlson_demo = (
+    CarlsonSlash(),
+    CarlsonMinus(),
+    CarlsonHalfMinus(),
+    CarlsonFour(),
+    CarlsonX(),
+    CarlsonPlus(),
+    CarlsonFrown(),
+    CarlsonT(),
+)
+
+
+carlson_classic = (
     *rotations(CarlsonSlash, 2),
     *rotations(CarlsonMinus, 2),
     CarlsonFour(),
@@ -195,6 +278,11 @@ carlson_tiles = (
     CarlsonPlus(),
     *rotations(CarlsonFrown, 4),
     *rotations(CarlsonT, 4),
+)
+
+carlson_tiles = (
+    *carlson_classic,
+    *rotations(CarlsonHalfMinus, 4),
 )
 
 
@@ -213,6 +301,7 @@ def carlson(
     grid=False,
 ):
     all_boxes = []
+
     def one_tile(x, y, size):
         ctx.save()
         ctx.translate(x, y)

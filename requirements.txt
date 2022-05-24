@@ -1,2 +1,4 @@
 jupyterlab
+numpy
+pillow
 pycairo
