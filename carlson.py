@@ -302,6 +302,10 @@ def carlson(
 ):
     all_boxes = []
 
+    if isinstance(chance, float):
+        _chance = chance
+        chance = lambda *a, **k: _chance
+
     def one_tile(x, y, size):
         ctx.save()
         ctx.translate(x, y)
@@ -324,7 +328,7 @@ def carlson(
             bgfg = bgfg[::-1]
             boxes = []
             for bx, by, bsize in last_boxes:
-                if rand.random() <= chance:
+                if rand.random() <= chance(bx, by, bsize):
                     for dx, dy in range2d(2, 2):
                         nbsize = bsize / 2
                         nbx, nby = bx + dx * nbsize, by + dy * nbsize
