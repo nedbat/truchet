@@ -210,28 +210,33 @@ def value_chart(tiles, inverted=False):
     return ctx
 
 
-def show_tiles(tiles, per_row=5, with_value=False, with_name=False):
-    tiles = sorted(tiles, key=lambda t: t.__class__.__name__)
-    W = 100
-    wh = 50
-    gap = 10
+def show_tiles(tiles, size=100, frac=.6, width=950, with_value=False, with_name=False, only_one=False, sort=True):
+    if only_one:
+        # Keep only one of each class
+        classes = {tile.__class__ for tile in tiles}
+        tiles = [cls() for cls in classes]
+    if sort:
+        tiles = sorted(tiles, key=lambda t: t.__class__.__name__)
+    wh = size * frac
+    gap = size / 10
+    per_row = (width + gap) // (size + gap)
     nrows = len(tiles) // per_row + (1 if len(tiles) % per_row else 0)
     ncols = per_row if nrows > 1 else len(tiles)
-    totalW = (W + gap) * ncols - gap
-    totalH = (W + gap) * nrows - gap
+    totalW = (size + gap) * ncols - gap
+    totalH = (size + gap) * nrows - gap
     with cairo_context(totalW, totalH) as ctx:
         ctx.select_font_face("Sans")
         ctx.set_font_size(10)
         for i, tile in enumerate(tiles):
             r, c = divmod(i, per_row)
             ctx.save()
-            ctx.translate((W + gap) * c, (W + gap) * r)
-            ctx.rectangle(0, 0, W, W)
+            ctx.translate((size + gap) * c, (size + gap) * r)
+            ctx.rectangle(0, 0, size, size)
             ctx.set_source_rgb(0.85, 0.85, 0.85)
             ctx.fill()
 
             ctx.save()
-            ctx.translate((W - wh) / 2, (W - wh) / 2)
+            ctx.translate((size - wh) / 2, (size - wh) / 2)
             tile.draw(ctx, wh)
 
             ctx.rectangle(0, 0, wh, wh)
@@ -247,7 +252,7 @@ def show_tiles(tiles, per_row=5, with_value=False, with_name=False):
                 ctx.show_text(f"{tile_value(tile):.2f}")
 
             if with_name:
-                ctx.move_to(2, W - 2)
+                ctx.move_to(2, size - 2)
                 ctx.set_source_rgba(0, 0, 0, 1)
                 ctx.show_text(tile.__class__.__name__)
 
@@ -283,7 +288,7 @@ def show_overlap(tile):
 carlson_demo = (
     CarlsonSlash(),
     CarlsonMinus(),
-    CarlsonHalfMinus(),
+    #CarlsonHalfMinus(),
     CarlsonFour(),
     CarlsonX(),
     CarlsonPlus(),
@@ -292,7 +297,7 @@ carlson_demo = (
 )
 
 
-carlson_classic = (
+carlson_tiles = (
     *rotations(CarlsonSlash, 2),
     *rotations(CarlsonMinus, 2),
     CarlsonFour(),
@@ -302,8 +307,8 @@ carlson_classic = (
     *rotations(CarlsonT, 4),
 )
 
-carlson_tiles = (
-    *carlson_classic,
+carlson_extra = (
+    *carlson_tiles,
     *rotations(CarlsonHalfMinus, 4),
 )
 
@@ -358,7 +363,7 @@ def carlson(
 
         if grid:
             for x, y, size in all_boxes:
-                ctx.set_line_width(1)
+                ctx.set_line_width(.5)
                 ctx.rectangle(x, y, size, size)
                 ctx.set_source_rgb(1, 0, 0)
                 ctx.stroke()
