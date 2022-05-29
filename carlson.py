@@ -1,3 +1,4 @@
+import itertools
 import math
 import random
 
@@ -210,6 +211,7 @@ def value_chart(tiles, inverted=False):
 
 
 def show_tiles(tiles, per_row=5, with_value=False, with_name=False):
+    tiles = sorted(tiles, key=lambda t: t.__class__.__name__)
     W = 100
     wh = 50
     gap = 10
@@ -256,6 +258,26 @@ def show_tiles(tiles, per_row=5, with_value=False, with_name=False):
 
 def rotations(cls, num_rots):
     return map(cls, range(num_rots))
+
+def show_overlap(tile):
+    W = 200
+    bgfg = [color(1), color(0)]
+    with cairo_context(W, W) as ctx:
+        ctx.rectangle(0, 0, W, W)
+        ctx.set_source_rgb(.75, .75, .75)
+        ctx.fill()
+        ctx.save()
+        ctx.translate(W/4, W/4)
+        tile.draw(ctx, W/2, bgfg)
+        ctx.restore()
+        offset = 0
+        bgfg = [color((0, 0, .7)), color((1, .5, .5))]
+        for x, y in itertools.product([0, 1], repeat=2):
+            ctx.save()
+            ctx.translate(W/4 + x * W/4 + offset, W/4 + y * W/4 + offset)
+            tile.draw(ctx, W/4, bgfg)
+            ctx.restore()
+    return ctx
 
 
 carlson_demo = (

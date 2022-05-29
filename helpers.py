@@ -35,7 +35,7 @@ def ffffx(start, f):
         to_call = next_to_call
     return allfx
 
-def all_subclasses_set(cls):
+def all_subclasses(cls):
     """Return a set of all subclasses of `cls`, including subclasses of subclasses."""
     return ffffx(cls, lambda c: c.__subclasses__())
 
