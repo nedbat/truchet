@@ -1,14 +1,6 @@
-import math
 
+from drawing import CE, CS, CW, CN, DEG90, DEG180
 from helpers import color
-
-
-# Compass points for making circle arcs
-CE = 0
-CS = math.pi / 2
-CW = math.pi
-CN = -math.pi / 2
-FULL_CIRCLE = (0, 2 * math.pi)
 
 
 def rotations(cls, num_rots=4):
@@ -43,6 +35,12 @@ class Tile:
         def __init__(self, wh, bgfg=None):
             self.wh = wh
             self.bgfg = bgfg
+            if self.bgfg is None:
+                self.bgfg = [color(1), color(0)]
+            # +-----+-----+---------+-----+-----+
+            # 0    w16   w26       w46   w56    wh
+            #                 w12
+            #   w1c   w3c            w9c
             self.w1c = wh / 12
             self.w3c = wh * 3 / 12
             self.w9c = wh * 9 / 12
@@ -51,12 +49,8 @@ class Tile:
             self.w46 = wh * 4 / 6
             self.w56 = wh * 5 / 6
             self.w12 = wh / 2
-            self.wgap = wh / 24
+            self.w1cc = wh / 24
 
-    # +-----+-----+---------+-----+-----+
-    # 0    w16   w26       w46   w56    wh
-    #                 w12
-    #   w1c   w3c            w9c    wbc
 
     rotations = 4
     flip = False
@@ -66,8 +60,6 @@ class Tile:
         self.flipped = flipped
 
     def init_tile(self, ctx, g):
-        if g.bgfg is None:
-            g.bgfg = [color(1), color(0)]
         ctx.arc(0, 0, g.w16, CS, CE)
         ctx.arc(g.w12, 0, g.w16, CW, CE)
         ctx.arc(g.wh, 0, g.w16, CW, CS)
@@ -76,19 +68,18 @@ class Tile:
         ctx.arc(g.w12, g.wh, g.w16, CE, CW)
         ctx.arc(0, g.wh, g.w16, CE, CN)
         ctx.arc(0, g.w12, g.w16, CS, CN)
-        ctx.close_path()
         ctx.set_source_rgba(*g.bgfg[0])
         ctx.fill()
         ctx.set_source_rgba(*g.bgfg[1])
         ctx.translate(g.w12, g.w12)
-        ctx.rotate(math.pi / 2 * self.rot)
+        ctx.rotate(DEG90 * self.rot)
         ctx.translate(-g.w12, -g.w12)
         if self.flipped:
             ctx.translate(g.wh, 0)
             ctx.scale(-1, 1)
 
     def dot(self, ctx, g, x, y):
-        ctx.arc(x, y, g.w1c, *FULL_CIRCLE)
+        ctx.circle(x, y, g.w1c)
         ctx.fill()
 
     def four_corners(self, ctx, g, which=(0,1,2,3)):
@@ -101,10 +92,10 @@ class Tile:
                 ctx.arc_negative(0, 0, g.w16, CS, CE)
                 ctx.fill()
             ctx.translate(g.wh, 0)
-            ctx.rotate(math.pi / 2)
+            ctx.rotate(DEG90)
         ctx.restore()
 
-    def slash(self, ctx, g):
+    def slash(self, ctx, g, with_gap=False):
         ctx.save()
         ctx.arc(g.w9c, 0, g.w1c, CW, CE)
         ctx.arc(0, 0, g.w56, CE, CS)
@@ -120,12 +111,12 @@ class Tile:
         ctx.arc(g.wh, g.w9c, g.w1c, CN, CS)
         ctx.arc(g.wh, 0, g.w56, CS, CW)
         ctx.fill()
-        ctx.set_source_rgba(*(g.bgfg or [color(1)])[0])
+        ctx.set_source_rgba(*g.bgfg[0])
         ctx.arc(0, 0, g.w46, CE, CS)
-        ctx.arc_negative(0, 0, g.w46 - g.wgap, CS, CE)
+        ctx.arc_negative(0, 0, g.w46 - g.w1cc, CS, CE)
         ctx.fill()
         ctx.arc_negative(0, 0, g.w56, CS, CE)
-        ctx.arc(0, 0, g.w56 + g.wgap, CE, CS)
+        ctx.arc(0, 0, g.w56 + g.w1cc, CE, CS)
         ctx.fill()
         ctx.restore()
 
@@ -214,7 +205,7 @@ class EdgeHash(Tile):
         for _ in range(4):
             self.top_edge(ctx, g)
             ctx.translate(g.wh, 0)
-            ctx.rotate(math.pi / 2)
+            ctx.rotate(DEG90)
 
 @collect(n6_tiles)
 @collect(n6_circles)
@@ -224,7 +215,7 @@ class Edge34(Tile):
         for _ in range(3):
             self.top_edge(ctx, g)
             ctx.translate(g.wh, 0)
-            ctx.rotate(math.pi / 2)
+            ctx.rotate(DEG90)
         ctx.restore()
         self.dot(ctx, g, 0, g.w3c)
         self.dot(ctx, g, 0, g.w9c)
@@ -238,7 +229,7 @@ class HourGlass(Tile):
         for _ in range(2):
             self.top_edge(ctx, g)
             ctx.translate(g.wh, g.wh)
-            ctx.rotate(math.pi)
+            ctx.rotate(DEG180)
         ctx.restore()
         for x in [0, g.wh]:
             for y in [g.w3c, g.w9c]:
@@ -256,7 +247,7 @@ class ThatWay(Tile):
         self.dot(ctx, g, g.w9c, g.wh)
         ctx.save()
         ctx.translate(g.wh, g.wh)
-        ctx.rotate(math.pi)
+        ctx.rotate(DEG180)
         self.ell(ctx, g)
         ctx.restore()
 
@@ -273,7 +264,7 @@ class ThoseWays(Tile):
         self.ell(ctx, g)
         ctx.save()
         ctx.translate(g.wh, g.wh)
-        ctx.rotate(math.pi)
+        ctx.rotate(DEG180)
         self.ell(ctx, g)
         ctx.restore()
 
@@ -290,7 +281,7 @@ class ThoseWaysX(Tile):
         self.ell(ctx, g)
         ctx.save()
         ctx.translate(g.wh, g.wh)
-        ctx.rotate(math.pi)
+        ctx.rotate(DEG180)
         self.ell(ctx, g)
         ctx.restore()
 
@@ -310,7 +301,7 @@ class Kanji(Tile):
         ctx.fill()
         ctx.save()
         ctx.translate(g.w12, g.w12)
-        ctx.rotate(math.pi / 2)
+        ctx.rotate(DEG90)
         ctx.translate(-g.w12, -g.w12)
         self.top_edge(ctx, g)
         ctx.restore()
@@ -360,7 +351,7 @@ class SadFace(Tile):
             ctx.arc_negative(0, 0, g.w16, CS, CE)
             ctx.fill()
             ctx.translate(g.wh, 0)
-            ctx.rotate(math.pi / 2)
+            ctx.rotate(DEG90)
         ctx.restore()
         self.dot(ctx, g, 0, g.w9c)
         self.dot(ctx, g, g.wh, g.w9c)
@@ -382,7 +373,7 @@ class SadFaceHigh(Tile):
             ctx.arc_negative(0, 0, g.w16, CS, CE)
             ctx.fill()
             ctx.translate(g.wh, 0)
-            ctx.rotate(math.pi / 2)
+            ctx.rotate(DEG90)
         ctx.restore()
         self.dot(ctx, g, 0, g.w9c)
         self.dot(ctx, g, g.wh, g.w9c)
@@ -400,7 +391,7 @@ class Frog(Tile):
             ctx.arc_negative(0, 0, g.w16, CS, CE)
             ctx.fill()
             ctx.translate(g.wh, 0)
-            ctx.rotate(math.pi / 2)
+            ctx.rotate(DEG90)
         ctx.restore()
         ctx.arc(0, g.w9c, g.w1c, CS, CN)
         ctx.arc(g.wh, g.w9c, g.w1c, CN, CS)
@@ -424,13 +415,13 @@ class CrossCross(Tile):
         self.dot(ctx, g, g.w3c, g.wh)
 
         ctx.arc(g.w9c, 0, g.w1c, CW, CE)
-        ctx.line_to(g.w56, g.w46 - g.wgap)
-        ctx.line_to(g.w46, g.w46 - g.wgap)
+        ctx.line_to(g.w56, g.w46 - g.w1cc)
+        ctx.line_to(g.w46, g.w46 - g.w1cc)
         ctx.fill()
 
         ctx.arc(g.w9c, g.wh, g.w1c, CE, CW)
-        ctx.line_to(g.w46, g.w56 + g.wgap)
-        ctx.line_to(g.w56, g.w56 + g.wgap)
+        ctx.line_to(g.w46, g.w56 + g.w1cc)
+        ctx.line_to(g.w56, g.w56 + g.w1cc)
         ctx.fill()
 
         self.dot(ctx, g, g.wh, g.w3c)

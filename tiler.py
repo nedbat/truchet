@@ -6,14 +6,6 @@ from drawing import cairo_context
 from helpers import color, range2d
 
 
-# Compass points for making circle arcs
-CE = 0
-CS = math.pi / 2
-CW = math.pi
-CN = -math.pi / 2
-FULL_CIRCLE = (0, 2 * math.pi)
-
-
 def tile_value(tile):
     pic = multiscale(tiles=[tile], width=10, height=10, tilew=10, nlayers=1, format="png")
     import numpy as np
@@ -130,7 +122,7 @@ def show_overlap(tile):
     return ctx
 
 
-def multiscale(
+def multiscale_truchet(
     tiles,
     width=400,
     height=200,

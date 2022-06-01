@@ -11,7 +11,6 @@ CE = 0
 CS = math.pi / 2
 CW = math.pi
 CN = -math.pi / 2
-FULL_CIRCLE = (0, 2 * math.pi)
 
 
 class CarlsonTile:
@@ -67,13 +66,13 @@ class CarlsonMinus(CarlsonTile):
         wh3 = wh - wh1
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
-        ctx.arc(wh2, 0, wh6, *FULL_CIRCLE)
+        ctx.circle(wh2, 0, wh6)
         ctx.fill()
         ctx.arc(wh, wh2, wh6, CN, CS)
         ctx.arc(0, wh2, wh6, CS, CN)
         ctx.close_path()
         ctx.fill()
-        ctx.arc(wh2, wh, wh6, *FULL_CIRCLE)
+        ctx.circle(wh2, wh, wh6)
         ctx.fill()
 
 
@@ -84,15 +83,15 @@ class CarlsonHalfMinus(CarlsonTile):
         wh3 = wh - wh1
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
-        ctx.arc(wh2, 0, wh6, *FULL_CIRCLE)
+        ctx.circle(wh2, 0, wh6)
         ctx.fill()
         ctx.arc(wh, wh2, wh6, CN, CS)
         ctx.arc(wh2, wh2, wh6, CS, CN)
         ctx.close_path()
         ctx.fill()
-        ctx.arc(wh2, wh, wh6, *FULL_CIRCLE)
+        ctx.circle(wh2, wh, wh6)
         ctx.fill()
-        ctx.arc(0, wh2, wh6, *FULL_CIRCLE)
+        ctx.circle(0, wh2, wh6)
         ctx.fill()
 
 
@@ -102,7 +101,7 @@ class CarlsonFour(CarlsonTile):
         wh6 = wh / 6
         self.init_tile(ctx, wh, bgfg)
         for x, y in [(wh2, 0), (wh, wh2), (wh2, wh), (0, wh2)]:
-            ctx.arc(x, y, wh6, *FULL_CIRCLE)
+            ctx.circle(x, y, wh6)
             ctx.fill()
 
 
@@ -150,9 +149,9 @@ class CarlsonFrown(CarlsonTile):
         ctx.arc(wh, wh2, wh6, CN, CS)
         ctx.arc(wh, 0, wh3, CS, CW)
         ctx.fill()
-        ctx.arc(wh2, wh, wh6, *FULL_CIRCLE)
+        ctx.circle(wh2, wh, wh6)
         ctx.fill()
-        ctx.arc(0, wh2, wh6, *FULL_CIRCLE)
+        ctx.circle(0, wh2, wh6)
         ctx.fill()
 
 
@@ -168,7 +167,7 @@ class CarlsonT(CarlsonTile):
         ctx.arc(0, wh2, wh6, CS, CN)
         ctx.arc_negative(0, 0, wh1, CS, CE)
         ctx.fill()
-        ctx.arc(wh2, wh, wh6, *FULL_CIRCLE)
+        ctx.circle(wh2, wh, wh6)
         ctx.fill()
 
 

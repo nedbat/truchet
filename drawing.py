@@ -1,9 +1,16 @@
 """Helpers for drawing in Jupyter notebooks with PyCairo."""
 
 import io
+import math
 import os.path
 
 import cairo
+
+
+# Compass points for making circle arcs
+DEG90 = math.pi / 2
+DEG180 = math.pi
+CE, CS, CW, CN = [i * DEG90 for i in range(4)]
 
 
 class _CairoContext:
@@ -43,6 +50,10 @@ class _CairoContext:
     def __getattr__(self, name):
         """Proxy to the cairo context, so that we have all the same methods."""
         return getattr(self.ctx, name)
+
+    def circle(self, x, y, r):
+        """Add a complete circle to the path."""
+        self.ctx.arc(x, y, r, 0, 2 * math.pi)
 
 
 class _CairoSvg(_CairoContext):
