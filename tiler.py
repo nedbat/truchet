@@ -7,7 +7,7 @@ from helpers import color, range2d
 
 
 def tile_value(tile):
-    pic = multiscale(tiles=[tile], width=10, height=10, tilew=10, nlayers=1, format="png")
+    pic = multiscale_truchet(tiles=[tile], width=10, height=10, tilew=10, nlayers=1, format="png")
     import numpy as np
     from PIL import Image
 
@@ -72,9 +72,7 @@ def show_tiles(tiles, size=100, frac=.6, width=950, with_value=False, with_name=
             ctx.save()
             ctx.translate((size - wh) / 2, (size - wh) / 2)
 
-            g = tile.G(wh)
-            tile.init_tile(ctx, g)
-            tile.draw(ctx, g)
+            tile.draw_tile(ctx, wh)
 
             ctx.rectangle(0, 0, wh, wh)
             ctx.set_source_rgba(0.5, 0.5, 0.5, 0.75)
@@ -146,9 +144,7 @@ def multiscale_truchet(
         ctx.save()
         ctx.translate(x, y)
         tile = rand.choice(tiles)
-        g = tile.G(size, bgfg)
-        tile.init_tile(ctx, g)
-        tile.draw(ctx, g)
+        tile.draw_tile(ctx, size, bgfg)
         ctx.restore()
         boxes.append((x, y, size))
         if grid:

@@ -22,25 +22,41 @@ def collect(tile_list, repeat=1, rotations=None, flip=None):
         return cls
     return _dec
 
+
+def stroke(method):
+    method.is_stroke = True
+    return method
+
+
 n6_tiles = []
 n6_connected = []
 n6_circles = []
 n6_weird = []
 
-
-class Tile:
-    """Multi-scale truchet tiles of my own devising."""
-
+class TileBase:
     class G:
         def __init__(self, wh, bgfg=None):
             self.wh = wh
             self.bgfg = bgfg
             if self.bgfg is None:
                 self.bgfg = [color(1), color(0)]
-            # +-----+-----+---------+-----+-----+
-            # 0    w16   w26       w46   w56    wh
-            #                 w12
-            #   w1c   w3c            w9c
+
+    def draw_tile(self, ctx, wh, bgfg=None, base_color=None, meth_name="draw"):
+        g = self.G(wh, bgfg)
+        self.init_tile(ctx, g, base_color=base_color)
+        getattr(self, meth_name)(ctx, g)
+
+
+class Tile(TileBase):
+    """Multi-scale truchet tiles of my own devising."""
+
+    class G(TileBase.G):
+        def __init__(self, wh, bgfg=None):
+            super().__init__(wh, bgfg)
+            # +-----+-----+-----+-----+-----+-----+
+            # 0    w16   w26         w46   w56    wh
+            #   w1c   w3c               w9c
+            #                  w12
             self.w1c = wh / 12
             self.w3c = wh * 3 / 12
             self.w9c = wh * 9 / 12
@@ -59,7 +75,7 @@ class Tile:
         self.rot = rot
         self.flipped = flipped
 
-    def init_tile(self, ctx, g):
+    def init_tile(self, ctx, g, base_color=None):
         ctx.arc(0, 0, g.w16, CS, CE)
         ctx.arc(g.w12, 0, g.w16, CW, CE)
         ctx.arc(g.wh, 0, g.w16, CW, CS)
@@ -68,7 +84,7 @@ class Tile:
         ctx.arc(g.w12, g.wh, g.w16, CE, CW)
         ctx.arc(0, g.wh, g.w16, CE, CN)
         ctx.arc(0, g.w12, g.w16, CS, CN)
-        ctx.set_source_rgba(*g.bgfg[0])
+        ctx.set_source_rgba(*(base_color or g.bgfg[0]))
         ctx.fill()
         ctx.set_source_rgba(*g.bgfg[1])
         ctx.translate(g.w12, g.w12)
@@ -82,62 +98,72 @@ class Tile:
         ctx.circle(x, y, g.w1c)
         ctx.fill()
 
+    @stroke
     def four_corners(self, ctx, g, which=(0,1,2,3)):
-        ctx.save()
-        for i in range(4):
-            if i in which:
-                ctx.arc(g.w3c, 0, g.w1c, CW, CE)
-                ctx.arc(0, 0, g.w26, CE, CS)
-                ctx.arc(0, g.w3c, g.w1c, CS, CN)
-                ctx.arc_negative(0, 0, g.w16, CS, CE)
-                ctx.fill()
-            ctx.translate(g.wh, 0)
-            ctx.rotate(DEG90)
-        ctx.restore()
+        with ctx.save_restore():
+            for i in which:
+                with ctx.rotated(g.wh, i):
+                    ctx.arc(g.w3c, 0, g.w1c, CW, CE)
+                    ctx.arc(0, 0, g.w26, CE, CS)
+                    ctx.arc(0, g.w3c, g.w1c, CS, CN)
+                    ctx.arc_negative(0, 0, g.w16, CS, CE)
+                    ctx.fill()
 
-    def slash(self, ctx, g, with_gap=False):
-        ctx.save()
-        ctx.arc(g.w9c, 0, g.w1c, CW, CE)
-        ctx.arc(0, 0, g.w56, CE, CS)
-        ctx.arc(0, g.w9c, g.w1c, CS, CN)
-        ctx.arc_negative(0, 0, g.w46, CS, CE)
-        ctx.fill()
-        ctx.restore()
-
-    def slash_cross(self, ctx, g):
-        ctx.save()
-        ctx.arc(g.w3c, 0, g.w1c, CW, CE)
-        ctx.arc_negative(g.wh, 0, g.w46, CW, CS)
-        ctx.arc(g.wh, g.w9c, g.w1c, CN, CS)
-        ctx.arc(g.wh, 0, g.w56, CS, CW)
-        ctx.fill()
-        ctx.set_source_rgba(*g.bgfg[0])
-        ctx.arc(0, 0, g.w46, CE, CS)
-        ctx.arc_negative(0, 0, g.w46 - g.w1cc, CS, CE)
-        ctx.fill()
-        ctx.arc_negative(0, 0, g.w56, CS, CE)
-        ctx.arc(0, 0, g.w56 + g.w1cc, CE, CS)
-        ctx.fill()
-        ctx.restore()
-
-    def top_edge(self, ctx, g):
-        ctx.save()
-        ctx.arc(g.w3c, 0, g.w1c, CW, CE)
-        ctx.arc_negative(g.w12, 0, g.w16, CW, CE)
-        ctx.arc(g.w9c, 0, g.w1c, CW, CE)
-        ctx.arc(g.w12, 0, g.w26, CE, CW)
-        ctx.fill()
-        ctx.restore()
-
-    def ell(self, ctx, g):
-        ctx.save()
-        ctx.arc(g.w9c, 0, g.w1c, CW, CE)
-        ctx.arc(g.w12, 0, g.w26, CE, CS)
+    @stroke
+    def bar(self, ctx, g):
         ctx.arc(0, g.w3c, g.w1c, CS, CN)
-        ctx.arc_negative(g.w12, 0, g.w16, CS, CE)
+        ctx.arc(g.wh, g.w3c, g.w1c, CN, CS)
         ctx.fill()
-        ctx.restore()
 
+    @stroke
+    def bar_gapped(self, ctx, g):
+        self.bar(ctx, g)
+        ctx.set_source_rgba(*g.bgfg[0])
+        ctx.rectangle(0, g.w16 - g.w1cc, g.wh, g.w1cc)
+        ctx.fill()
+        ctx.rectangle(0, g.w26, g.wh, g.w1cc)
+        ctx.fill()
+
+    @stroke
+    def slash(self, ctx, g):
+        with ctx.save_restore():
+            ctx.arc(g.w9c, 0, g.w1c, CW, CE)
+            ctx.arc(0, 0, g.w56, CE, CS)
+            ctx.arc(0, g.w9c, g.w1c, CS, CN)
+            ctx.arc_negative(0, 0, g.w46, CS, CE)
+            ctx.fill()
+
+    @stroke
+    def slash_gapped(self, ctx, g):
+        self.slash(ctx, g)
+        with ctx.save_restore():
+            ctx.set_source_rgba(*g.bgfg[0])
+            ctx.arc(0, 0, g.w46, CE, CS)
+            ctx.arc_negative(0, 0, g.w46 - g.w1cc, CS, CE)
+            ctx.fill()
+            ctx.arc_negative(0, 0, g.w56, CS, CE)
+            ctx.arc(0, 0, g.w56 + g.w1cc, CE, CS)
+            ctx.fill()
+
+    @stroke
+    def top_edge(self, ctx, g):
+        with ctx.save_restore():
+            ctx.arc(g.w3c, 0, g.w1c, CW, CE)
+            ctx.arc_negative(g.w12, 0, g.w16, CW, CE)
+            ctx.arc(g.w9c, 0, g.w1c, CW, CE)
+            ctx.arc(g.w12, 0, g.w26, CE, CW)
+            ctx.fill()
+
+    @stroke
+    def ell(self, ctx, g):
+        with ctx.save_restore():
+            ctx.arc(g.w9c, 0, g.w1c, CW, CE)
+            ctx.arc(g.w12, 0, g.w26, CE, CS)
+            ctx.arc(0, g.w3c, g.w1c, CS, CN)
+            ctx.arc_negative(g.w12, 0, g.w16, CS, CE)
+            ctx.fill()
+
+    @stroke
     def high_frown(self, ctx, g):
         ctx.arc(g.w3c, g.wh, g.w1c, CE, CW)
         ctx.arc(g.w12, g.w9c, g.w26, CW, CE)
@@ -172,7 +198,8 @@ class Slash21(Tile):
 class SlashCross(Tile):
     def draw(self, ctx, g):
         self.slash(ctx, g)
-        self.slash_cross(ctx, g)
+        with ctx.flip_lr(g.wh):
+            self.slash_gapped(ctx, g)
         self.dot(ctx, g, g.wh, g.w3c)
         self.dot(ctx, g, g.w3c, g.wh)
         self.dot(ctx, g, 0, g.w3c)
@@ -195,6 +222,37 @@ class Cowboy(Tile):
         self.dot(ctx, g, g.wh, g.w3c)
         self.dot(ctx, g, g.w3c, g.wh)
 
+@collect(n6_tiles)
+@collect(n6_circles)
+class Empty(Tile):
+    def draw(self, ctx, g):
+        for a in [g.w3c, g.w9c]:
+            for b in [0, g.wh]:
+                self.dot(ctx, g, a, b)
+                self.dot(ctx, g, b, a)
+
+@collect(n6_tiles)
+@collect(n6_circles)
+class Filled(Tile):
+    def draw(self, ctx, g):
+        ctx.arc(g.w3c, 0, g.w1c, CW, CE)
+        ctx.arc_negative(g.w12, 0, g.w16, CW, CE)
+        ctx.arc(g.w9c, 0, g.w1c, CW, CE)
+        ctx.arc_negative(g.wh, 0, g.w16, CW, CS)
+        ctx.arc(g.wh, g.w3c, g.w1c, CN, CS)
+        ctx.arc_negative(g.wh, g.w12, g.w16, CN, CS)
+        ctx.arc(g.wh, g.w9c, g.w1c, CN, CS)
+        ctx.arc_negative(g.wh, g.wh, g.w16, CN, CW)
+        ctx.arc(g.w9c, g.wh, g.w1c, CE, CW)
+        ctx.arc_negative(g.w12, g.wh, g.w16, CE, CW)
+        ctx.arc(g.w3c, g.wh, g.w1c, CE, CW)
+        ctx.arc_negative(0, g.wh, g.w16, CE, CN)
+        ctx.arc(0, g.w9c, g.w1c, CS, CN)
+        ctx.arc_negative(0, g.w12, g.w16, CS, CN)
+        ctx.arc(0, g.w3c, g.w1c, CS, CN)
+        ctx.arc_negative(0, 0, g.w16, CS, CE)
+        ctx.fill()
+
 
 @collect(n6_tiles)
 @collect(n6_connected)
@@ -211,12 +269,11 @@ class EdgeHash(Tile):
 @collect(n6_circles)
 class Edge34(Tile):
     def draw(self, ctx, g):
-        ctx.save()
-        for _ in range(3):
-            self.top_edge(ctx, g)
-            ctx.translate(g.wh, 0)
-            ctx.rotate(DEG90)
-        ctx.restore()
+        with ctx.save_restore():
+            for _ in range(3):
+                self.top_edge(ctx, g)
+                ctx.translate(g.wh, 0)
+                ctx.rotate(DEG90)
         self.dot(ctx, g, 0, g.w3c)
         self.dot(ctx, g, 0, g.w9c)
 
@@ -225,12 +282,11 @@ class Edge34(Tile):
 class HourGlass(Tile):
     rotations = 2
     def draw(self, ctx, g):
-        ctx.save()
-        for _ in range(2):
-            self.top_edge(ctx, g)
-            ctx.translate(g.wh, g.wh)
-            ctx.rotate(DEG180)
-        ctx.restore()
+        with ctx.save_restore():
+            for _ in range(2):
+                self.top_edge(ctx, g)
+                ctx.translate(g.wh, g.wh)
+                ctx.rotate(DEG180)
         for x in [0, g.wh]:
             for y in [g.w3c, g.w9c]:
                 self.dot(ctx, g, x, y)
@@ -245,11 +301,10 @@ class ThatWay(Tile):
         self.dot(ctx, g, g.wh, g.w3c)
         self.dot(ctx, g, 0, g.w9c)
         self.dot(ctx, g, g.w9c, g.wh)
-        ctx.save()
-        ctx.translate(g.wh, g.wh)
-        ctx.rotate(DEG180)
-        self.ell(ctx, g)
-        ctx.restore()
+        with ctx.save_restore():
+            ctx.translate(g.wh, g.wh)
+            ctx.rotate(DEG180)
+            self.ell(ctx, g)
 
 @collect(n6_tiles)
 @collect(n6_circles)
@@ -262,11 +317,8 @@ class ThoseWays(Tile):
         self.dot(ctx, g, 0, g.w9c)
         self.dot(ctx, g, g.w9c, g.wh)
         self.ell(ctx, g)
-        ctx.save()
-        ctx.translate(g.wh, g.wh)
-        ctx.rotate(DEG180)
-        self.ell(ctx, g)
-        ctx.restore()
+        with ctx.rotated(g.wh, 2):
+            self.ell(ctx, g)
 
 @collect(n6_tiles)
 @collect(n6_circles)
@@ -279,11 +331,8 @@ class ThoseWaysX(Tile):
         self.dot(ctx, g, 0, g.w9c)
         self.dot(ctx, g, g.w9c, g.wh)
         self.ell(ctx, g)
-        ctx.save()
-        ctx.translate(g.wh, g.wh)
-        ctx.rotate(DEG180)
-        self.ell(ctx, g)
-        ctx.restore()
+        with ctx.rotated(g.wh, 2):
+            self.ell(ctx, g)
 
 @collect(n6_tiles)
 @collect(n6_connected)
@@ -291,20 +340,12 @@ class ThoseWaysX(Tile):
 class Kanji(Tile):
     def draw(self, ctx, g):
         self.ell(ctx, g)
-        ctx.save()
-        ctx.translate(0, g.wh)
-        ctx.scale(1, -1)
-        self.ell(ctx, g)
-        ctx.restore()
-        ctx.arc(g.w3c, 0, g.w1c, CW, CE)
-        ctx.arc(g.w3c, g.wh, g.w1c, CE, CW)
-        ctx.fill()
-        ctx.save()
-        ctx.translate(g.w12, g.w12)
-        ctx.rotate(DEG90)
-        ctx.translate(-g.w12, -g.w12)
-        self.top_edge(ctx, g)
-        ctx.restore()
+        with ctx.flip_tb(g.wh):
+            self.ell(ctx, g)
+        with ctx.rotated(g.wh, 3):
+            self.bar(ctx, g)
+        with ctx.rotated(g.wh, 1):
+            self.top_edge(ctx, g)
 
 
 @collect(n6_tiles)
@@ -343,16 +384,15 @@ class SwimSuit2(Tile):
 @collect(n6_circles)
 class SadFace(Tile):
     def draw(self, ctx, g):
-        ctx.save()
-        for _ in range(2):
-            ctx.arc(g.w3c, 0, g.w1c, CW, CE)
-            ctx.arc(0, 0, g.w26, CE, CS)
-            ctx.arc(0, g.w3c, g.w1c, CS, CN)
-            ctx.arc_negative(0, 0, g.w16, CS, CE)
-            ctx.fill()
-            ctx.translate(g.wh, 0)
-            ctx.rotate(DEG90)
-        ctx.restore()
+        with ctx.save_restore():
+            for _ in range(2):
+                ctx.arc(g.w3c, 0, g.w1c, CW, CE)
+                ctx.arc(0, 0, g.w26, CE, CS)
+                ctx.arc(0, g.w3c, g.w1c, CS, CN)
+                ctx.arc_negative(0, 0, g.w16, CS, CE)
+                ctx.fill()
+                ctx.translate(g.wh, 0)
+                ctx.rotate(DEG90)
         self.dot(ctx, g, 0, g.w9c)
         self.dot(ctx, g, g.wh, g.w9c)
         ctx.arc(g.w3c, g.wh, g.w1c, CE, CW)
@@ -365,16 +405,15 @@ class SadFace(Tile):
 @collect(n6_circles)
 class SadFaceHigh(Tile):
     def draw(self, ctx, g):
-        ctx.save()
-        for _ in range(2):
-            ctx.arc(g.w3c, 0, g.w1c, CW, CE)
-            ctx.arc(0, 0, g.w26, CE, CS)
-            ctx.arc(0, g.w3c, g.w1c, CS, CN)
-            ctx.arc_negative(0, 0, g.w16, CS, CE)
-            ctx.fill()
-            ctx.translate(g.wh, 0)
-            ctx.rotate(DEG90)
-        ctx.restore()
+        with ctx.save_restore():
+            for _ in range(2):
+                ctx.arc(g.w3c, 0, g.w1c, CW, CE)
+                ctx.arc(0, 0, g.w26, CE, CS)
+                ctx.arc(0, g.w3c, g.w1c, CS, CN)
+                ctx.arc_negative(0, 0, g.w16, CS, CE)
+                ctx.fill()
+                ctx.translate(g.wh, 0)
+                ctx.rotate(DEG90)
         self.dot(ctx, g, 0, g.w9c)
         self.dot(ctx, g, g.wh, g.w9c)
         self.high_frown(ctx, g)
@@ -383,19 +422,17 @@ class SadFaceHigh(Tile):
 @collect(n6_circles)
 class Frog(Tile):
     def draw(self, ctx, g):
-        ctx.save()
-        for _ in range(2):
-            ctx.arc(g.w3c, 0, g.w1c, CW, CE)
-            ctx.arc(0, 0, g.w26, CE, CS)
-            ctx.arc(0, g.w3c, g.w1c, CS, CN)
-            ctx.arc_negative(0, 0, g.w16, CS, CE)
-            ctx.fill()
-            ctx.translate(g.wh, 0)
-            ctx.rotate(DEG90)
-        ctx.restore()
-        ctx.arc(0, g.w9c, g.w1c, CS, CN)
-        ctx.arc(g.wh, g.w9c, g.w1c, CN, CS)
-        ctx.fill()
+        with ctx.save_restore():
+            for _ in range(2):
+                ctx.arc(g.w3c, 0, g.w1c, CW, CE)
+                ctx.arc(0, 0, g.w26, CE, CS)
+                ctx.arc(0, g.w3c, g.w1c, CS, CN)
+                ctx.arc_negative(0, 0, g.w16, CS, CE)
+                ctx.fill()
+                ctx.translate(g.wh, 0)
+                ctx.rotate(DEG90)
+        with ctx.rotated(g.wh, 2):
+            self.bar(ctx, g)
         self.dot(ctx, g, g.w3c, g.wh)
         self.dot(ctx, g, g.w9c, g.wh)
 
@@ -409,21 +446,12 @@ class CrossCross(Tile):
         ctx.arc_negative(0, 0, g.w16, CS, CE)
         ctx.fill()
 
-        ctx.arc(0, g.w9c, g.w1c, CS, CN)
-        ctx.arc(g.wh, g.w9c, g.w1c, CN, CS)
-        ctx.fill()
+        with ctx.rotated(g.wh, 1):
+            self.bar(ctx, g)
+        with ctx.rotated(g.wh, 2):
+            self.bar_gapped(ctx, g)
+
         self.dot(ctx, g, g.w3c, g.wh)
-
-        ctx.arc(g.w9c, 0, g.w1c, CW, CE)
-        ctx.line_to(g.w56, g.w46 - g.w1cc)
-        ctx.line_to(g.w46, g.w46 - g.w1cc)
-        ctx.fill()
-
-        ctx.arc(g.w9c, g.wh, g.w1c, CE, CW)
-        ctx.line_to(g.w46, g.w56 + g.w1cc)
-        ctx.line_to(g.w56, g.w56 + g.w1cc)
-        ctx.fill()
-
         self.dot(ctx, g, g.wh, g.w3c)
 
 @collect(n6_tiles)
@@ -448,7 +476,8 @@ class CornerSlashMinus(Tile):
 class CornerSlashCross(Tile):
     def draw(self, ctx, g):
         self.slash(ctx, g)
-        self.slash_cross(ctx, g)
+        with ctx.flip_lr(g.wh):
+            self.slash_gapped(ctx, g)
         self.four_corners(ctx, g)
 
 @collect(n6_weird)
@@ -456,7 +485,8 @@ class CornerSlashCrossUnder(Tile):
     def draw(self, ctx, g):
         self.four_corners(ctx, g)
         self.slash(ctx, g)
-        self.slash_cross(ctx, g)
+        with ctx.flip_lr(g.wh):
+            self.slash_gapped(ctx, g)
 
 @collect(n6_tiles)
 @collect(n6_weird)
@@ -466,3 +496,25 @@ class Sprout(Tile):
         self.ell(ctx, g)
         self.four_corners(ctx, g, which=(1,2,3))
         self.dot(ctx, g, g.w3c, 0)
+
+@collect(n6_tiles)
+@collect(n6_circles)
+class DoubleEll(Tile):
+    def draw(self, ctx, g):
+        self.ell(ctx, g)
+        with ctx.flip_lr(g.wh):
+            with ctx.rotated(g.wh, 1):
+                self.ell(ctx, g)
+        self.four_corners(ctx, g, which=(2,))
+        self.dot(ctx, g, g.wh, g.w3c)
+        self.dot(ctx, g, g.w3c, g.wh)
+
+n6_strokes = []
+for meth_name in dir(Tile):
+    meth = getattr(Tile, meth_name, None)
+    if getattr(meth, "is_stroke", False):
+        class _OneStroke(Tile):
+            def draw_tile(self, ctx, wh, meth_name=meth_name):
+                super().draw_tile(ctx, wh, base_color=(1, .65, .65), meth_name=meth_name)
+        cls = type(meth_name, (_OneStroke,), {})
+        n6_strokes.append(cls())

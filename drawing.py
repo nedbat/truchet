@@ -1,5 +1,6 @@
 """Helpers for drawing in Jupyter notebooks with PyCairo."""
 
+import contextlib
 import io
 import math
 import os.path
@@ -51,9 +52,41 @@ class _CairoContext:
         """Proxy to the cairo context, so that we have all the same methods."""
         return getattr(self.ctx, name)
 
+    # Drawing helpers
+
     def circle(self, x, y, r):
         """Add a complete circle to the path."""
         self.ctx.arc(x, y, r, 0, 2 * math.pi)
+
+    @contextlib.contextmanager
+    def save_restore(self):
+        self.ctx.save()
+        try:
+            yield
+        finally:
+            self.ctx.restore()
+
+    @contextlib.contextmanager
+    def flip_lr(self, wh):
+        with self.save_restore():
+            self.ctx.translate(wh, 0)
+            self.ctx.scale(-1, 1)
+            yield
+
+    @contextlib.contextmanager
+    def flip_tb(self, wh):
+        with self.save_restore():
+            self.ctx.translate(0, wh)
+            self.ctx.scale(1, -1)
+            yield
+
+    @contextlib.contextmanager
+    def rotated(self, wh, nturns):
+        with self.save_restore():
+            self.ctx.translate(wh / 2, wh / 2)
+            self.ctx.rotate(math.pi * nturns / 2)
+            self.ctx.translate(-wh / 2, -wh / 2)
+            yield
 
 
 class _CairoSvg(_CairoContext):
