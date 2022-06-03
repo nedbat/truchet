@@ -34,13 +34,15 @@ def value_chart(tiles, inverted=False):
         ctx.stroke()
         tick(0, 20)
         tick(1, 20)
-        for i in range(10):
-            tick(i / 10, 10)
         for t in tiles:
             value = tile_value(t)
             tick(value, 50)
             if inverted:
                 tick(1 - value, 50)
+        ctx.set_source_rgb(1, 0, 0)
+        ctx.set_line_width(2)
+        for i in range(11):
+            tick(i / 10, 10)
     return ctx
 
 
@@ -49,8 +51,12 @@ def show_tiles(tiles, size=100, frac=.6, width=950, with_value=False, with_name=
         # Keep only one of each class
         classes = {tile.__class__ for tile in tiles}
         tiles = [cls() for cls in classes]
+    if with_value:
+        values = {t: f"{tile_value(t):.3f}" for t in tiles}
     if sort:
         tiles = sorted(tiles, key=lambda t: t.__class__.__name__)
+        if with_value:
+            tiles = sorted(tiles, key=values.get)
     wh = size * frac
     gap = size / 10
     per_row = (width + gap) // (size + gap)
@@ -84,7 +90,7 @@ def show_tiles(tiles, size=100, frac=.6, width=950, with_value=False, with_name=
             if with_value:
                 ctx.move_to(2, 10)
                 ctx.set_source_rgba(0, 0, 0, 1)
-                ctx.show_text(f"{tile_value(tile):.2f}")
+                ctx.show_text(values[tile])
 
             if with_name:
                 ctx.move_to(2, size - 2)
@@ -141,11 +147,10 @@ def multiscale_truchet(
         chance = lambda *a, **k: _chance
 
     def one_tile(x, y, size):
-        ctx.save()
-        ctx.translate(x, y)
         tile = rand.choice(tiles)
-        tile.draw_tile(ctx, size, bgfg)
-        ctx.restore()
+        with ctx.save_restore():
+            ctx.translate(x, y)
+            tile.draw_tile(ctx, size, bgfg)
         boxes.append((x, y, size))
         if grid:
             all_boxes.append((x, y, size))
@@ -170,10 +175,10 @@ def multiscale_truchet(
                         one_tile(nbx, nby, nbsize)
 
         if grid:
+            ctx.set_line_width(.5)
+            ctx.set_source_rgb(1, 0, 0)
             for x, y, size in all_boxes:
-                ctx.set_line_width(.5)
                 ctx.rectangle(x, y, size, size)
-                ctx.set_source_rgb(1, 0, 0)
                 ctx.stroke()
 
     return ctx
