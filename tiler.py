@@ -1,6 +1,9 @@
+import collections
 import itertools
 import math
 import random
+
+import numpy as np
 
 from drawing import cairo_context
 from helpers import color, range2d
@@ -173,6 +176,72 @@ def multiscale_truchet(
                         nbsize = bsize / 2
                         nbx, nby = bx + dx * nbsize, by + dy * nbsize
                         one_tile(nbx, nby, nbsize)
+
+        if grid:
+            ctx.set_line_width(.5)
+            ctx.set_source_rgb(1, 0, 0)
+            for x, y, size in all_boxes:
+                ctx.rectangle(x, y, size, size)
+                ctx.stroke()
+
+    return ctx
+
+
+def nearest(levels, data):
+    """Find the values in a closest to the values in b"""
+    data_shape = data.shape
+    linear = data.reshape((math.prod(data_shape),))
+    adjusted = levels[np.argmin(np.abs(levels[:, np.newaxis] - linear[np.newaxis, :]), axis=0)]
+    return adjusted.reshape(data_shape)
+
+
+def image_truchet(
+    tiles,
+    image,
+    width=400,
+    height=400,
+    tilew=40,
+    bg=1,
+    fg=0,
+    seed=None,
+    format="svg",
+    output=None,
+    grid=False,
+    scale=False,
+):
+    all_boxes = []
+
+    tile_values = collections.defaultdict(list)
+    for tile in tiles:
+        value = int(tile_value(tile) * 255)
+        tile_values[value].append(tile)
+    levels = np.array(sorted(tile_values.keys()))
+    if scale:
+        lmin, lmax = min(levels), max(levels)
+        imin, imax = np.min(image), np.max(image)
+        image -= imin 
+        image /= (imax - imin)
+        image *= (lmax - lmin) 
+        image += lmin
+    image = nearest(levels, image)
+
+    tilew = width // image.shape[0]
+    def one_tile(ox, oy, x, y, size):
+        tile = rand.choice(tile_values[image[oy, ox]])
+        with ctx.save_restore():
+            ctx.translate(x, y)
+            tile.draw_tile(ctx, size, bgfg)
+        boxes.append((x, y, size))
+        if grid:
+            all_boxes.append((x, y, size))
+
+    rand = random.Random(seed)
+    with cairo_context(width, height, format=format, output=output) as ctx:
+        boxes = []
+        size = tilew
+        bgfg = [color(bg), color(fg)]
+        for ox, oy in range2d(int(width / size), int(height / size)):
+            one_tile(ox, oy, ox * size, oy * size, size)
 
         if grid:
             ctx.set_line_width(.5)
