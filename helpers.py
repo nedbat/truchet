@@ -40,19 +40,4 @@ def all_subclasses(cls):
     return ffffx(cls, lambda c: c.__subclasses__())
 
 def closest(x, values):
-    return min(values, lambda v: abs(v - x))
-
-
-if 0:
-    # https://bpa.st/4UHA
-    import numpy as np
-
-
-    def nearest(a, b):
-        """Find the values in a closest to the values in b"""
-        return a[np.argmin(np.abs(a[:, np.newaxis] - b[np.newaxis, :]), axis=0)]
-
-
-    floats = np.array((1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
-    x = np.array((3.2, 1.8, 7.6, 9.9))
-    print(nearest(floats, x))
+    return min(values, key=lambda v: abs(v - x))

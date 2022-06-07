@@ -4,16 +4,14 @@ import math
 import random
 
 import numpy as np
+from PIL import Image
 
 from drawing import cairo_context
-from helpers import color, range2d
+from helpers import color, range2d, closest
 
 
 def tile_value(tile):
     pic = multiscale_truchet(tiles=[tile], width=10, height=10, tilew=10, nlayers=1, format="png")
-    import numpy as np
-    from PIL import Image
-
     a = np.array(Image.open(pic.pngio).convert("L"))
     value = np.sum(a) / a.size
     return value / 255
@@ -49,7 +47,16 @@ def value_chart(tiles, inverted=False):
     return ctx
 
 
-def show_tiles(tiles, size=100, frac=.6, width=950, with_value=False, with_name=False, only_one=False, sort=True):
+def show_tiles(
+    tiles,
+    size=100,
+    frac=.6,
+    width=950,
+    with_value=False,
+    with_name=False,
+    only_one=False,
+    sort=True,
+):
     if only_one:
         # Keep only one of each class
         classes = {tile.__class__ for tile in tiles}
@@ -130,12 +137,14 @@ def show_overlap(tile):
 
 
 def multiscale_truchet(
-    tiles,
+    tiles=None,
+    tile_chooser=None,
     width=400,
     height=200,
     tilew=40,
     nlayers=2,
     chance=0.5,
+    should_split=None,
     bg=1,
     fg=0,
     seed=None,
@@ -145,12 +154,21 @@ def multiscale_truchet(
 ):
     all_boxes = []
 
+    rand = random.Random(seed)
+
+    if isinstance(tiles, list):
+        assert tile_chooser is None
+        tile_chooser = lambda ux, uy, uw, ilevel: rand.choice(tiles)
+
     if isinstance(chance, float):
         _chance = chance
         chance = lambda *a, **k: _chance
 
-    def one_tile(x, y, size):
-        tile = rand.choice(tiles)
+    if should_split is None:
+        should_split = lambda x, y, size, ilayer: rand.random() <= chance(x, y, size, ilayer)
+
+    def one_tile(x, y, size, ilayer):
+        tile = tile_chooser(x / width, y / width, size / width, ilayer)
         with ctx.save_restore():
             ctx.translate(x, y)
             tile.draw_tile(ctx, size, bgfg)
@@ -158,24 +176,23 @@ def multiscale_truchet(
         if grid:
             all_boxes.append((x, y, size))
 
-    rand = random.Random(seed)
     with cairo_context(width, height, format=format, output=output) as ctx:
         boxes = []
         size = tilew
         bgfg = [color(bg), color(fg)]
         for ox, oy in range2d(int(width / size), int(height / size)):
-            one_tile(ox * size, oy * size, size)
+            one_tile(ox * size, oy * size, size, 0)
 
         for ilayer in range(nlayers - 1):
             last_boxes = boxes
             bgfg = bgfg[::-1]
             boxes = []
             for bx, by, bsize in last_boxes:
-                if rand.random() <= chance(bx, by, bsize):
+                if should_split(bx / width, by / width, bsize / width, ilayer):
+                    nbsize = bsize / 2
                     for dx, dy in range2d(2, 2):
-                        nbsize = bsize / 2
                         nbx, nby = bx + dx * nbsize, by + dy * nbsize
-                        one_tile(nbx, nby, nbsize)
+                        one_tile(nbx, nby, nbsize, ilayer-1)
 
         if grid:
             ctx.set_line_width(.5)
@@ -201,53 +218,81 @@ def image_truchet(
     width=400,
     height=400,
     tilew=40,
-    bg=1,
-    fg=0,
-    seed=None,
+    nlayers=1,
     format="svg",
     output=None,
     grid=False,
-    scale=False,
+    seed=None,
+    scale=0,
+    split_thresh=50,
+    split_test=2,
 ):
-    all_boxes = []
-
-    tile_values = collections.defaultdict(list)
-    for tile in tiles:
-        value = int(tile_value(tile) * 255)
-        tile_values[value].append(tile)
-    levels = np.array(sorted(tile_values.keys()))
-    if scale:
-        lmin, lmax = min(levels), max(levels)
-        imin, imax = np.min(image), np.max(image)
-        image -= imin 
-        image /= (imax - imin)
-        image *= (lmax - lmin) 
-        image += lmin
-    image = nearest(levels, image)
-
-    tilew = width // image.shape[0]
-    def one_tile(ox, oy, x, y, size):
-        tile = rand.choice(tile_values[image[oy, ox]])
-        with ctx.save_restore():
-            ctx.translate(x, y)
-            tile.draw_tile(ctx, size, bgfg)
-        boxes.append((x, y, size))
-        if grid:
-            all_boxes.append((x, y, size))
-
     rand = random.Random(seed)
-    with cairo_context(width, height, format=format, output=output) as ctx:
-        boxes = []
-        size = tilew
-        bgfg = [color(bg), color(fg)]
-        for ox, oy in range2d(int(width / size), int(height / size)):
-            one_tile(ox, oy, ox * size, oy * size, size)
 
-        if grid:
-            ctx.set_line_width(.5)
-            ctx.set_source_rgb(1, 0, 0)
-            for x, y, size in all_boxes:
-                ctx.rectangle(x, y, size, size)
-                ctx.stroke()
+    if isinstance(image, str):
+        image = np.array(Image.open(image).convert("L"))
 
-    return ctx
+    tile_valuess = []
+    levelss = []
+    all_levels = []
+    for half in [0, 1]:
+        tile_values = collections.defaultdict(list)
+        for tile in tiles:
+            value = int(tile_value(tile) * 255)
+            if half == 1:
+                value = 256 - value
+            tile_values[value].append(tile)
+        levels = np.array(sorted(tile_values.keys()))
+        tile_valuess.append(tile_values)
+        levelss.append(levels)
+        all_levels.extend(levels)
+
+    lmin, lmax = min(all_levels), max(all_levels)
+    imin, imax = np.min(image), np.max(image)
+    scale = float(scale)
+    lmin *= scale
+    lmax = 1 - scale * (1 - lmax)
+    imin *= scale
+    imax = 1 - scale * (1 - imax)
+    image = image - imin    # make a copy of the image
+    image /= (imax - imin)
+    image *= (lmax - lmin)
+    image += lmin
+
+    def tile_chooser(ux, uy, us, ilayer):
+        ix = int(ux * image.shape[0])
+        iy = int(uy * image.shape[1])
+        isize = int(us * image.shape[0])
+        color = np.mean(image[iy:iy+isize, ix:ix+isize])
+        close_color = closest(color, levelss[ilayer % 2])
+        tiles = tile_valuess[ilayer % 2][close_color]
+        return rand.choice(tiles)
+
+    def should_split(ux, uy, us, _):
+        nsplit = 2 ** split_test
+        ix = int(ux * image.shape[0])
+        iy = int(uy * image.shape[1])
+        isize = int(us * image.shape[0] / nsplit)
+        colors = []
+        for dx, dy in range2d(nsplit, nsplit):
+            x = ix + dx * isize
+            y = iy + dy * isize
+            colors.append(np.mean(image[y:y+isize, x:x+isize]))
+        lo = min(colors)
+        hi = max(colors)
+        return (hi - lo) > split_thresh
+
+    return multiscale_truchet(
+        tile_chooser=tile_chooser,
+        should_split=should_split,
+        width=width,
+        height=height,
+        tilew=tilew,
+        nlayers=nlayers,
+        bg=1,
+        fg=0,
+        format=format,
+        output=output,
+        grid=grid,
+        chance=.8,
+    )
