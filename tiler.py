@@ -9,6 +9,52 @@ from PIL import Image
 from drawing import cairo_context
 from helpers import color, range2d, closest
 
+def rotations(cls, num_rots=4):
+    return map(cls, range(num_rots))
+
+def collect(tile_list, repeat=1, rotations=None, flip=None):
+    def _dec(cls):
+        rots = rotations
+        if rots is None:
+            rots = cls.rotations
+        will_flip = flip
+        if will_flip is None:
+            will_flip = cls.flip
+        flips = [False, True] if will_flip else [False]
+        for _ in range(repeat):
+            for rot in range(rots):
+                for flipped in flips:
+                    tile_list.append(cls(rot=rot, flipped=flipped))
+        return cls
+    return _dec
+
+
+def stroke(method):
+    method.is_stroke = True
+    return method
+
+
+class TileBase:
+    class G:
+        def __init__(self, wh, bgfg=None):
+            self.wh = wh
+            self.bgfg = bgfg
+            if self.bgfg is None:
+                self.bgfg = [color(1), color(0)]
+
+    rotations = 4
+    flip = False
+
+    def __init__(self, rot=0, flipped=False):
+        self.rot = rot
+        self.flipped = flipped
+
+    def draw_tile(self, ctx, wh, bgfg=None, base_color=None, meth_name="draw"):
+        g = self.G(wh, bgfg)
+        self.init_tile(ctx, g, base_color=base_color)
+        getattr(self, meth_name)(ctx, g)
+
+
 
 def tile_value(tile):
     pic = multiscale_truchet(tiles=[tile], width=10, height=10, tilew=10, nlayers=1, format="png")
@@ -112,9 +158,6 @@ def show_tiles(
     return ctx
 
 
-def rotations(cls, num_rots):
-    return map(cls, range(num_rots))
-
 def show_overlap(tile):
     W = 200
     bgfg = [color(1), color(0)]
@@ -156,7 +199,7 @@ def multiscale_truchet(
 
     rand = random.Random(seed)
 
-    if isinstance(tiles, list):
+    if isinstance(tiles, (list, tuple)):
         assert tile_chooser is None
         tile_chooser = lambda ux, uy, uw, ilevel: rand.choice(tiles)
 

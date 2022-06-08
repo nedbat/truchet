@@ -1,31 +1,7 @@
 
 from drawing import CE, CS, CW, CN, DEG90, DEG180
 from helpers import color
-
-
-def rotations(cls, num_rots=4):
-    return map(cls, range(num_rots))
-
-def collect(tile_list, repeat=1, rotations=None, flip=None):
-    def _dec(cls):
-        rots = rotations
-        if rots is None:
-            rots = cls.rotations
-        will_flip = flip
-        if will_flip is None:
-            will_flip = cls.flip
-        flips = [False, True] if will_flip else [False]
-        for _ in range(repeat):
-            for rot in range(rots):
-                for flipped in flips:
-                    tile_list.append(cls(rot=rot, flipped=flipped))
-        return cls
-    return _dec
-
-
-def stroke(method):
-    method.is_stroke = True
-    return method
+from tiler import TileBase, collect, rotations, stroke
 
 
 n6_tiles = []
@@ -33,20 +9,6 @@ n6_connected = []
 n6_circles = []
 n6_weird = []
 n6_filled = []
-
-class TileBase:
-    class G:
-        def __init__(self, wh, bgfg=None):
-            self.wh = wh
-            self.bgfg = bgfg
-            if self.bgfg is None:
-                self.bgfg = [color(1), color(0)]
-
-    def draw_tile(self, ctx, wh, bgfg=None, base_color=None, meth_name="draw"):
-        g = self.G(wh, bgfg)
-        self.init_tile(ctx, g, base_color=base_color)
-        getattr(self, meth_name)(ctx, g)
-
 
 class Tile(TileBase):
     """Multi-scale truchet tiles of my own devising."""
@@ -67,14 +29,6 @@ class Tile(TileBase):
             self.w56 = wh * 5 / 6
             self.w12 = wh / 2
             self.w1cc = wh / 24
-
-
-    rotations = 4
-    flip = False
-
-    def __init__(self, rot=0, flipped=False):
-        self.rot = rot
-        self.flipped = flipped
 
     def init_tile(self, ctx, g, base_color=None):
         ctx.arc(0, 0, g.w16, CS, CE)
