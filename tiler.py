@@ -267,6 +267,7 @@ def image_truchet(
     grid=False,
     seed=None,
     scale=0,
+    jitter=0,
     split_thresh=50,
     split_test=2,
 ):
@@ -307,6 +308,8 @@ def image_truchet(
         iy = int(uy * image.shape[1])
         isize = int(us * image.shape[0])
         color = np.mean(image[iy:iy+isize, ix:ix+isize])
+        if jitter:
+            color += rand.random() * jitter * 2 - jitter
         close_color = closest(color, levelss[ilayer % 2])
         tiles = tile_valuess[ilayer % 2][close_color]
         return rand.choice(tiles)
