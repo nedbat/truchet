@@ -221,10 +221,11 @@ def multiscale_truchet(
 
     with cairo_context(width, height, format=format, output=output) as ctx:
         boxes = []
-        size = tilew
         bgfg = [color(bg), color(fg)]
-        for ox, oy in range2d(int(width / size), int(height / size)):
-            one_tile(ox * size, oy * size, size, 0)
+        wextra = 1 if (width % tilew) else 0
+        hextra = 1 if (height % tilew) else 0
+        for ox, oy in range2d(int(width / tilew) + wextra, int(height / tilew) + hextra):
+            one_tile(ox * tilew, oy * tilew, tilew, 0)
 
         for ilayer in range(nlayers - 1):
             last_boxes = boxes
