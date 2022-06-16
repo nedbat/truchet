@@ -49,6 +49,9 @@ class TileBase:
         self.rot = rot
         self.flipped = flipped
 
+    def init_tile(self, ctx, g, base_color=None):
+        ...
+
     def draw_tile(self, ctx, wh, bgfg=None, base_color=None, meth_name="draw"):
         g = self.G(wh, bgfg)
         self.init_tile(ctx, g, base_color=base_color)

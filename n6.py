@@ -1,7 +1,6 @@
 
 from drawing import CE, CS, CW, CN, DEG90, DEG180
-from helpers import color
-from tiler import TileBase, collect, rotations, stroke
+from tiler import TileBase, collect, stroke
 
 
 n6_tiles = []
