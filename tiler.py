@@ -60,16 +60,30 @@ class TileBase:
 
 
 def tile_value(tile):
+    """The gray value of a tile from 0 (black) to 1 (white)."""
     pic = multiscale_truchet(tiles=[tile], width=10, height=10, tilew=10, nlayers=1, format="png")
     a = np.array(Image.open(pic.pngio).convert("L"))
-    value = np.sum(a) / a.size
-    return value / 255
+    value = np.sum(a) / a.size / 255
+    return value
+
+
+def tile_value4(tile):
+    """The four-quadrant gray values (0->1) of a tile."""
+    pw = 10
+    pw2 = pw // 2
+    pic = multiscale_truchet(tiles=[tile], width=pw, height=pw, tilew=pw, nlayers=1, format="png")
+    a = np.array(Image.open(pic.pngio).convert("L"))
+    values = []
+    for dx, dy in itertools.product([0, pw2], repeat=2):
+        a4 = a[dy:dy + pw2, dx:dx + pw2]
+        values.append(np.sum(a4) / a4.size / 255)
+    return np.array(values)
 
 
 def value_chart(tiles, inverted=False):
     marg = 50
     width = 800
-    mid = 50
+    mid = 30
 
     def tick(x, h):
         v = (width - 2 * marg) * x + marg
@@ -86,9 +100,9 @@ def value_chart(tiles, inverted=False):
         tick(1, 20)
         for t in tiles:
             value = tile_value(t)
-            tick(value, 50)
+            tick(value, 20)
             if inverted:
-                tick(1 - value, 50)
+                tick(1 - value, 20)
         ctx.set_source_rgb(1, 0, 0)
         ctx.set_line_width(2)
         for i in range(11):
@@ -344,5 +358,79 @@ def image_truchet(
         format=format,
         output=output,
         grid=grid,
-        chance=.8,
+    )
+
+
+def image_truchet4(
+    tiles,
+    image,
+    width=400,
+    height=400,
+    tilew=40,
+    nlayers=1,
+    format="svg",
+    output=None,
+    grid=False,
+    split_thresh=50,
+    split_test=2,
+):
+    if isinstance(image, str):
+        image = np.array(Image.open(image).convert("L"))
+
+    tile_valuess = []
+    for half in [0, 1]:
+        tile_values = []
+        for tile in tiles:
+            value4 = tile_value4(tile)
+            if half == 1:
+                value4 = 1 - value4
+            tile_values.append((value4, tile))
+        tile_valuess.append(tile_values)
+
+    def tile_chooser(ux, uy, us, ilayer):
+        ix = int(ux * image.shape[0])
+        iy = int(uy * image.shape[1])
+        isize = int(us * image.shape[0])
+        color4 = []
+        is2 = isize // 2
+        for dx, dy in itertools.product([0, is2], repeat=2):
+            ixx = ix + dx
+            iyy = iy + dy
+            color4.append(np.mean(image[iyy:iyy+is2, ixx:ixx+is2]))
+        color4 = np.array(color4) / 255
+        min_close = 999999999
+        best_tile = None
+        for value4, tile in tile_valuess[ilayer % 2]:
+            close = np.sum(np.absolute(color4 - value4))
+            if close < min_close:
+                min_close = close
+                best_tile = tile
+        return best_tile
+
+    def should_split(ux, uy, us, _):
+        nsplit = 2 ** split_test
+        ix = int(ux * image.shape[0])
+        iy = int(uy * image.shape[1])
+        isize = int(us * image.shape[0] / nsplit)
+        colors = []
+        for dx, dy in range2d(nsplit, nsplit):
+            x = ix + dx * isize
+            y = iy + dy * isize
+            colors.append(np.mean(image[y:y+isize, x:x+isize]))
+        lo = min(colors)
+        hi = max(colors)
+        return (hi - lo) > split_thresh
+
+    return multiscale_truchet(
+        tile_chooser=tile_chooser,
+        should_split=should_split,
+        width=width,
+        height=height,
+        tilew=tilew,
+        nlayers=nlayers,
+        bg=1,
+        fg=0,
+        format=format,
+        output=output,
+        grid=grid,
     )
