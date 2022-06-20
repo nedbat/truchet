@@ -1,5 +1,4 @@
 import collections
-import itertools
 import math
 import random
 
@@ -7,7 +6,7 @@ import numpy as np
 from PIL import Image
 
 from drawing import cairo_context
-from helpers import color, range2d, closest
+from helpers import array_slices_2d, color, range2d, closest
 
 def rotations(cls, num_rots=4):
     return map(cls, range(num_rots))
@@ -74,8 +73,7 @@ def tile_value4(tile):
     pic = multiscale_truchet(tiles=[tile], width=pw, height=pw, tilew=pw, nlayers=1, format="png")
     a = np.array(Image.open(pic.pngio).convert("L"))
     values = []
-    for dx, dy in itertools.product([0, pw2], repeat=2):
-        a4 = a[dy:dy + pw2, dx:dx + pw2]
+    for a4 in array_slices_2d(a, 0, 0, nx=2, dx=pw2):
         values.append(np.sum(a4) / a4.size / 255)
     return np.array(values)
 
@@ -188,7 +186,7 @@ def show_overlap(tile):
         ctx.restore()
         offset = 0
         bgfg = [color((0, 0, .7)), color((1, .5, .5))]
-        for x, y in itertools.product([0, 1], repeat=2):
+        for x, y in range2d(2, 2):
             ctx.save()
             ctx.translate(W/4 + x * W/4 + offset, W/4 + y * W/4 + offset)
             tile.draw(ctx, W/4, bgfg)
@@ -338,10 +336,8 @@ def image_truchet(
         iy = int(uy * image.shape[1])
         isize = int(us * image.shape[0] / nsplit)
         colors = []
-        for dx, dy in range2d(nsplit, nsplit):
-            x = ix + dx * isize
-            y = iy + dy * isize
-            colors.append(np.mean(image[y:y+isize, x:x+isize]))
+        for aslice in array_slices_2d(image, ix, iy, nx=nsplit, dx=isize):
+            colors.append(np.mean(aslice))
         lo = min(colors)
         hi = max(colors)
         return (hi - lo) > split_thresh
@@ -393,10 +389,8 @@ def image_truchet4(
         isize = int(us * image.shape[0])
         color4 = []
         is2 = isize // 2
-        for dx, dy in itertools.product([0, is2], repeat=2):
-            ixx = ix + dx
-            iyy = iy + dy
-            color4.append(np.mean(image[iyy:iyy+is2, ixx:ixx+is2]))
+        for aslice in array_slices_2d(image, ix, iy, nx=2, dx=is2):
+            color4.append(np.mean(aslice))
         color4 = np.array(color4) / 255
         min_close = 999999999
         best_tile = None
@@ -413,10 +407,8 @@ def image_truchet4(
         iy = int(uy * image.shape[1])
         isize = int(us * image.shape[0] / nsplit)
         colors = []
-        for dx, dy in range2d(nsplit, nsplit):
-            x = ix + dx * isize
-            y = iy + dy * isize
-            colors.append(np.mean(image[y:y+isize, x:x+isize]))
+        for aslice in array_slices_2d(image, ix, iy, nx=nsplit, dx=isize):
+            colors.append(np.mean(aslice))
         lo = min(colors)
         hi = max(colors)
         return (hi - lo) > split_thresh

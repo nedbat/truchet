@@ -8,6 +8,22 @@ def range2d(nx, ny):
     return itertools.product(range(nx), range(ny))
 
 
+def array_slices_2d(arr, x0, y0, nx, dx=None, ny=None, dy=None):
+    """
+    Produce slices of the array in a 2d grid.
+
+    The slices start at x0,y0.  There are nx across, ny (defaulting to nx) down.
+    The slices are dx across, dy (defaulting to dx) down.
+
+    """
+    ny = ny or nx
+    dy = dy or dx
+    for ix, iy in range2d(nx, ny):
+        x = x0 + ix * dx
+        y = y0 + iy * dy
+        yield arr[y:y+dy, x:x+dx]
+
+
 def color(val):
     """Create an RGBA color tuple from a variety of inputs."""
     if isinstance(val, (int, float)):
