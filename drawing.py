@@ -96,6 +96,7 @@ class _CairoSvg(_CairoContext):
         super().__init__(width, height, output)
         self.svgio = io.BytesIO()
         self.surface = cairo.SVGSurface(self.svgio, self.width, self.height)
+        self.surface.set_document_unit(cairo.SVGUnit.PX)
         self.ctx = cairo.Context(self.surface)
 
     def __exit__(self, typ, val, tb):

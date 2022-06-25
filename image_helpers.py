@@ -16,7 +16,7 @@ def downsample_by_averaging(img, window_shape):
 def show_array_as_blocks(image, width, tilew):
     imgh, imgw = image.shape
     tile_across = width // tilew
-    window_w = imgw // tile_across 
+    window_w = imgw // tile_across
     simg = downsample_by_averaging(image, (window_w, window_w))
     imgh, imgw = simg.shape
     with cairo_context(width, width) as ctx:
