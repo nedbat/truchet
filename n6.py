@@ -143,6 +143,18 @@ class Tile(TileBase):
         ctx.arc_negative(0, 0, g.w16, CS, CE)
         ctx.fill()
 
+    @stroke
+    def mid_loop(self, ctx, g):
+        ctx.arc(0, g.w9c, g.w1c, CS, CN)
+        ctx.arc_negative(0, g.w12, g.w16, CS, CE)
+        ctx.arc(g.w12, g.w12, g.w26, CW, CE)
+        ctx.arc_negative(g.wh, g.w12, g.w16, CW, CS)
+        ctx.arc(g.wh, g.w9c, g.w1c, CN, CS)
+        ctx.arc(g.wh, g.w12, g.w26, CS, CW)
+        ctx.arc_negative(g.w12, g.w12, g.w16, CE, CW)
+        ctx.arc(0, g.w12, g.w26, CE, CS)
+        ctx.fill()
+
     def draw(self, ctx, g):
         ...
 
@@ -178,7 +190,6 @@ class Slash2(Tile):
         self.dot(ctx, g, g.w9c, g.wh)
         self.four_corners(ctx, g, which=(0,))
 
-@collect(n6_tiles)
 @collect(n6_weird)
 class SlashCross(Tile):
     def draw(self, ctx, g):
@@ -232,6 +243,7 @@ class Dotted(Tile):
 
 @collect(n6_tiles)
 @collect(n6_filled)
+@collect(n6_connected)
 class Filled(Tile):
     rotations = 1
     def draw(self, ctx, g):
@@ -257,6 +269,7 @@ class Filled(Tile):
 @collect(n6_tiles)
 @collect(n6_circles)
 @collect(n6_filled)
+@collect(n6_connected)
 class FilledHollow(Filled):
     rotations = 1
     def draw(self, ctx, g):
@@ -318,6 +331,25 @@ class Filled13(Tile):
 @collect(n6_tiles)
 @collect(n6_circles)
 @collect(n6_filled)
+class Filled13Bar(Tile):
+    def draw(self, ctx, g):
+        ctx.arc(g.w3c, 0, g.w1c, CW, CE)
+        ctx.arc_negative(g.w12, 0, g.w16, CW, CE)
+        ctx.arc(g.w9c, 0, g.w1c, CW, CE)
+        ctx.arc_negative(g.wh, 0, g.w16, CW, CS)
+        ctx.arc(g.wh, g.w3c, g.w1c, CN, CS)
+        ctx.arc(0, g.w3c, g.w1c, CS, CN)
+        ctx.arc_negative(0, 0, g.w16, CS, CE)
+        ctx.fill()
+        self.dot(ctx, g, g.w3c, g.wh)
+        self.dot(ctx, g, g.w9c, g.wh)
+        with ctx.rotated(g.wh, 2):
+            self.bar(ctx, g)
+
+
+@collect(n6_tiles)
+@collect(n6_circles)
+@collect(n6_filled)
 class Filled34(Tile):
     def draw(self, ctx, g):
         ctx.arc(g.w3c, 0, g.w1c, CW, CE)
@@ -358,6 +390,64 @@ class EdgeHash(Tile):
 
 
 @collect(n6_tiles)
+@collect(n6_connected)
+class MidLoop(Tile):
+    rotations = 4
+    def draw(self, ctx, g):
+        with ctx.rotated(g.wh, 2):
+            self.top_edge(ctx, g)
+        self.four_corners(ctx, g, which=(0, 1))
+        self.mid_loop(ctx, g)
+
+
+@collect(n6_tiles)
+class MidLoopHalfSparse(Tile):
+    rotations = 4
+    flip = True
+    def draw(self, ctx, g):
+        with ctx.rotated(g.wh, 2):
+            self.top_edge(ctx, g)
+        self.four_corners(ctx, g, which=(0,))
+        self.dot(ctx, g, g.w9c, 0)
+        self.dot(ctx, g, g.wh, g.w3c)
+        self.mid_loop(ctx, g)
+
+@collect(n6_tiles)
+class MidLoopTopSparse(Tile):
+    rotations = 4
+    def draw(self, ctx, g):
+        with ctx.rotated(g.wh, 2):
+            self.top_edge(ctx, g)
+        self.dot(ctx, g, g.w3c, 0)
+        self.dot(ctx, g, 0, g.w3c)
+        self.dot(ctx, g, g.w9c, 0)
+        self.dot(ctx, g, g.wh, g.w3c)
+        self.mid_loop(ctx, g)
+
+@collect(n6_tiles)
+class MidLoopAllSparse(Tile):
+    rotations = 4
+    def draw(self, ctx, g):
+        self.dot(ctx, g, g.w3c, g.wh)
+        self.dot(ctx, g, g.w9c, g.wh)
+        self.dot(ctx, g, g.w3c, 0)
+        self.dot(ctx, g, 0, g.w3c)
+        self.dot(ctx, g, g.w9c, 0)
+        self.dot(ctx, g, g.wh, g.w3c)
+        self.mid_loop(ctx, g)
+
+@collect(n6_tiles)
+@collect(n6_connected)
+class EdgeHashBar(Tile):
+    rotations = 4
+    def draw(self, ctx, g):
+        for i in range(4):
+            with ctx.rotated(g.wh, i):
+                self.top_edge(ctx, g)
+        self.bar(ctx, g)
+
+
+@collect(n6_tiles)
 @collect(n6_circles)
 class Edge34(Tile):
     def draw(self, ctx, g):
@@ -368,6 +458,20 @@ class Edge34(Tile):
                 ctx.rotate(DEG90)
         self.dot(ctx, g, 0, g.w3c)
         self.dot(ctx, g, 0, g.w9c)
+
+@collect(n6_tiles)
+@collect(n6_circles)
+class Edge34Bar(Tile):
+    def draw(self, ctx, g):
+        with ctx.save_restore():
+            for _ in range(3):
+                self.top_edge(ctx, g)
+                ctx.translate(g.wh, 0)
+                ctx.rotate(DEG90)
+        self.dot(ctx, g, 0, g.w3c)
+        self.dot(ctx, g, 0, g.w9c)
+        with ctx.rotated(g.wh, 1):
+            self.bar(ctx, g)
 
 @collect(n6_tiles)
 @collect(n6_circles)
@@ -426,7 +530,6 @@ class ThoseWaysX(Tile):
         with ctx.rotated(g.wh, 2):
             self.ell(ctx, g)
 
-@collect(n6_tiles)
 @collect(n6_connected)
 @collect(n6_weird)
 class Kanji(Tile):
@@ -448,8 +551,7 @@ class CornerHash(Tile):
     def draw(self, ctx, g):
         self.four_corners(ctx, g)
 
-@collect(n6_tiles)
-@collect(n6_connected)
+@collect(n6_weird)
 class Octagon(Tile):
     rotations = 1
     def draw(self, ctx, g):
@@ -581,7 +683,6 @@ class CornerSlashMinus(Tile):
         self.slash(ctx, g)
         self.dot(ctx, g, g.wh, g.w3c)
 
-@collect(n6_tiles)
 @collect(n6_connected)
 @collect(n6_weird)
 class CornerSlashCross(Tile):
@@ -599,7 +700,6 @@ class CornerSlashCrossUnder(Tile):
         with ctx.flip_lr(g.wh):
             self.slash_gapped(ctx, g)
 
-@collect(n6_tiles)
 @collect(n6_weird)
 class Sprout(Tile):
     def draw(self, ctx, g):
@@ -620,7 +720,6 @@ class DoubleEll(Tile):
         self.dot(ctx, g, g.wh, g.w3c)
         self.dot(ctx, g, g.w3c, g.wh)
 
-@collect(n6_tiles)
 @collect(n6_circles)
 class TopEdge(Tile):
     def draw(self, ctx, g):

@@ -6,6 +6,7 @@ import math
 import os.path
 
 import cairo
+import IPython.display
 
 
 # Compass points for making circle arcs
@@ -155,3 +156,8 @@ def cairo_context(
     else:
         raise ValueError(f"Unknown format: {format!r}")
     return cls(width, height, output)
+
+
+def svg_row(*svgs):
+    sbs = '<div style="display:flex; flex-direction: row; justify-content: space-evenly">{}</div>'
+    return IPython.display.HTML(sbs.format("".join(s._repr_svg_() for s in svgs)))
