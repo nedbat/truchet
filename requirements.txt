@@ -1,4 +1,6 @@
+ipywidgets
 jupyterlab
 numpy
 pillow
 pycairo
+tqdm
