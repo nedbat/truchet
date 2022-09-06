@@ -247,7 +247,7 @@ def multiscale_truchet(
             bgfg = bgfg[::-1]
             boxes = []
             for bx, by, bsize in last_boxes:
-                if should_split(bx / width, by / width, bsize / width, ilayer):
+                if should_split((bx + bsize/2)/ width, (by + bsize/2) / height, bsize / width, ilayer):
                     nbsize = bsize / 2
                     for dx, dy in range2d(2, 2):
                         nbx, nby = bx + dx * nbsize, by + dy * nbsize

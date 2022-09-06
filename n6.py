@@ -8,6 +8,7 @@ n6_connected = []
 n6_circles = []
 n6_weird = []
 n6_filled = []
+n6_lattice = []
 
 class Tile(TileBase):
     """Multi-scale truchet tiles of my own devising."""
@@ -83,6 +84,20 @@ class Tile(TileBase):
         ctx.fill()
         ctx.rectangle(0, g.w26, g.wh, g.w1cc)
         ctx.fill()
+
+    @stroke
+    def half_bar_gapped(self, ctx, g):
+        with ctx.save_restore():
+            ctx.arc(0, g.w3c, g.w1c, CS, CN)
+            ctx.line_to(g.w12, g.w16)
+            ctx.line_to(g.w12, g.w26)
+            ctx.close_path()
+            ctx.fill()
+            ctx.set_source_rgba(*g.bgfg[0])
+            ctx.rectangle(0, g.w16 - g.w1cc, g.w12, g.w1cc)
+            ctx.fill()
+            ctx.rectangle(0, g.w26, g.w12, g.w1cc)
+            ctx.fill()
 
     @stroke
     def slash(self, ctx, g):
@@ -191,6 +206,7 @@ class Slash2(Tile):
         self.four_corners(ctx, g, which=(0,))
 
 @collect(n6_weird)
+@collect(n6_lattice)
 class SlashCross(Tile):
     def draw(self, ctx, g):
         self.slash(ctx, g)
@@ -542,6 +558,15 @@ class Kanji(Tile):
         with ctx.rotated(g.wh, 1):
             self.top_edge(ctx, g)
 
+@collect(n6_connected)
+@collect(n6_weird)
+@collect(n6_lattice)
+class KanjiGapped(Kanji):
+    def draw(self, ctx, g):
+        super().draw(ctx, g)
+        self.half_bar_gapped(ctx, g)
+        with ctx.rotated(g.wh, 3):
+            self.half_bar_gapped(ctx, g)
 
 @collect(n6_tiles)
 @collect(n6_connected)
@@ -668,6 +693,28 @@ class CrossCross(Tile):
         self.dot(ctx, g, g.w3c, g.wh)
         self.dot(ctx, g, g.wh, g.w3c)
 
+@collect(n6_lattice)
+class CrossCrossSlash(CrossCross):
+    def draw(self, ctx, g):
+        super().draw(ctx, g)
+        with ctx.rotated(g.wh, 2):
+            self.slash_gapped(ctx, g)
+        with ctx.rotated(g.wh, 1):
+            self.half_bar_gapped(ctx, g)
+
+@collect(n6_lattice)
+class Hash(Tile):
+    def draw(self, ctx, g):
+        for _ in range(4):
+            self.bar(ctx, g)
+            ctx.translate(g.wh, 0)
+            ctx.rotate(DEG90)
+        for _ in range(4):
+            self.half_bar_gapped(ctx, g)
+            ctx.translate(g.wh, 0)
+            ctx.rotate(DEG90)
+
+
 @collect(n6_tiles)
 @collect(n6_connected)
 @collect(n6_circles, repeat=3)
@@ -693,6 +740,7 @@ class CornerSlashCross(Tile):
         self.four_corners(ctx, g)
 
 @collect(n6_weird)
+@collect(n6_lattice)
 class CornerSlashCrossUnder(Tile):
     def draw(self, ctx, g):
         self.four_corners(ctx, g)
@@ -726,6 +774,19 @@ class TopEdge(Tile):
         self.bar(ctx, g)
         self.top_edge(ctx, g)
         self.all_dots(ctx, g)
+
+
+@collect(n6_lattice)
+class SlashTriangle(Tile):
+    def draw(self, ctx, g):
+        self.bar(ctx, g)
+        self.slash_gapped(ctx, g)
+        with ctx.flip_lr(g.wh):
+            self.slash_gapped(ctx, g)
+        self.half_bar_gapped(ctx, g)
+        self.dot(ctx, g, g.w3c, g.wh)
+        self.dot(ctx, g, g.w9c, g.wh)
+
 
 n6_strokes = []
 for meth_name in dir(Tile):
