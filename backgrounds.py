@@ -9,7 +9,7 @@ for i in range(NIMG):
         tiles=n6_circles, width=1680, height=1050, tilew=200, nlayers=3,
         chance=.4,
         seed=i,
-        **make_bgfg(i/NIMG, (.55, .45), .3),
+        **make_bgfg(i/NIMG, (.55, .45), .45),
         format="png", output=f"{DIR}/bg_{i:02d}.png",
     )
 
