@@ -251,7 +251,7 @@ def multiscale_truchet(
                     nbsize = bsize / 2
                     for dx, dy in range2d(2, 2):
                         nbx, nby = bx + dx * nbsize, by + dy * nbsize
-                        one_tile(nbx, nby, nbsize, ilayer-1)
+                        one_tile(nbx, nby, nbsize, ilayer+1)
 
         if grid:
             ctx.set_line_width(.5)
