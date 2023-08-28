@@ -32,6 +32,14 @@ for i in range(NIMG):
         format="png", output=f"{DIR}/bg_{i:02d}.png",
     )
 
+DIR = "~/wallpaper/tru6/1536"
+for i in range(NIMG):
+    multiscale_truchet(
+        tiles=n6_circles, width=1536, height=960, tilew=200, nlayers=3,
+        chance=.4, bg="#335495", fg="#243b6a", seed=i*3,
+        format="png", output=f"{DIR}/bg_{i:02d}.png",
+    )
+
 DIR = "~/wallpaper/tru6/1360"
 NIMG = 120
 for i in range(NIMG):
