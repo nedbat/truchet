@@ -3,4 +3,5 @@ jupyterlab
 numpy
 pillow
 pycairo
+shapely
 tqdm
