@@ -41,12 +41,12 @@ for i in range(NIMG):
     )
 
 DIR = "~/wallpaper/tru6/1360"
-NIMG = 120
+NIMG = 360
 for i in range(NIMG):
     multiscale_truchet(
-        tiles=n6_circles, width=1360, height=768, tilew=150, nlayers=3,
+        tiles=n6_circles, width=1360, height=768, tilew=150, nlayers=2,
         chance=.4,
-        seed=i*10,
+        seed=i*47,
         **make_bgfg(i/NIMG, (.55, .45), .45),
         format="png", output=f"{DIR}/bg_{i:03d}.png",
     )
